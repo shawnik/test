@@ -1,0 +1,2901 @@
+<?php
+ ob_start();
+ session_start();
+ require_once 'Dbconnect.php';
+ 
+ include ('custom_block.php');
+ 
+ $user_id = $_SESSION['users'];
+ 
+ $blockly_id = $_SESSION['blocklyId'];
+ 
+ $projects = $_SESSION['projects'];
+ 
+ $classrooms = $_SESSION['classrooms'];
+ 
+  $classroom_id = $_SESSION['classroom'];
+ 
+ $sql = "SELECT blockly_id, blockly_name FROM blockly WHERE blockly_name = '$projects'";
+$result = mysql_query($sql);
+$row = mysql_fetch_array($result);
+
+$id = $row['blockly_id'];
+
+$blockly_name = $row['blockly_name'];
+ 
+ 
+ 
+
+ 
+ // select loggedin users detail
+ $query = "SELECT * FROM users WHERE user_id='$user_id'";
+ $res=mysql_query($query);
+ $userRow=mysql_fetch_array($res);
+ 
+ $fname = $userRow['user_fname'];
+ $lname = $userRow['user_lname'];
+ 
+ $cq = "SELECT classroom_name, classroom_unique_code FROM classroom where classroom_name = '$classrooms'";
+ $cr = mysql_query($cq);
+ $cur = mysql_fetch_array($cr);
+ 
+ $classroom_unique_code = $cur['classroom_unique_code'];
+ 
+  $classroom_name = $cur['classroom_name'];
+ 
+$check = mysql_query("SELECT * FROM classroom WHERE classroom_name = '$classrooms'");
+$checkRow = mysql_fetch_array($check);
+
+$classroom_id = $checkRow['classroom_id'];
+
+ $name2 = "Select classroom_unique_code FROM classroom WHERE classroom_name = '$classrooms'";
+$r2 = mysql_query($name2);
+$userRow2 = mysql_fetch_array($r2);
+
+$classroom_name = $classrooms;
+
+$robotquery = mysql_query("SELECT * FROM robot WHERE user_id = '$user_id'");
+$robotrow = mysql_fetch_array($robotquery);
+
+$robot_mac_address = $robotrow['robot_mac_address'];
+$robot_id = $robotrow['robot_id'];
+ 
+?>
+
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="google" value="notranslate">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>My Blockly</title> 
+  <link rel="stylesheet" href="style.css">
+  <script src="storage.js"></script>
+  <script src="../../blockly_compressed.js"></script>
+  <script src="../../blocks_compressed.js"></script>
+  <script src="../../javascript_compressed.js"></script>
+  <script src="../../python_compressed.js"></script>
+  <script src="../../php_compressed.js"></script>
+  <script src="../../lua_compressed.js"></script>
+  <script src="../../dart_compressed.js"></script>
+  <script src="../../acorn_interpreter.js"></script>
+  <script src="code.js"></script>
+  <script src="../../core/css.js"></script>
+  
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+  <script src="mqttws31.js"></script>
+  
+  <link href="assets/fonts/font-roboto.css" rel="stylesheet">
+	<link href="assets/bootstrap/bootstrap4-alpha3.min.css" rel="stylesheet">
+	<link href="assets/font-awesome/css/font-awesome.min.css" rel="stylesheet">
+	<link href="assets/web-analytics/style.css" rel="stylesheet">
+
+	<!-- scripts -->
+	<script src="assets/jquery/jquery-3.1.0.min.js"></script>
+	<script src="assets/tether/tether.min.js"></script>
+	<script src="assets/bootstrap/bootstrap4-alpha3.min.js"></script>
+	<script src="http://canvasjs.com/assets/script/canvasjs.min.js"></script>
+	<script src="assets/web-analytics/real-time.js"></script>
+	
+  <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css">
+    <link rel="stylesheet" href="gridstack.css"/>
+
+	
+	
+	
+	<style type="text/css">
+	
+	#g1, #g2, #g3, #g4, #g5, #g6 {
+        width:200px; height:100px;
+        display: inline-block;
+        margin: 1em;
+      }
+	  
+	  #robot {
+		  color: #FFFFFF;
+	  }
+	  
+	  #active {
+       color: #7fff7f; 
+      }
+      
+      #inactive {
+      	color: #ff4c4c;
+      }
+	  
+	  #chart {
+        width:230px; height:100px;
+        display: inline-block;
+        margin: 1em;
+      }
+        .grid-stack {
+            background: black;
+        }
+
+        .grid-stack-item-content {
+            color: #2c3e50;
+            text-align: center;
+            background-color: 363838;
+        }
+
+        .grid-stack .grid-stack {
+            /*margin: 0 -10px;*/
+            background: rgba(54, 56, 56, 0.3);
+        }
+
+        .grid-stack .grid-stack .grid-stack-item-content {
+            background: lightpink;
+        }
+		ul {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    background-color: #333;
+}
+
+li {
+    float: left;
+    border-right:1px solid #bbb;
+}
+
+li:last-child {
+    border-right: none;
+}
+
+li a {
+    display: block;
+    color: white;
+    text-align: center;
+    padding: 14px 16px;
+    text-decoration: none;
+}
+
+li a:hover:not(.active) {
+    background-color: #111;
+}
+
+.active {
+    background-color: #4CAF50;
+}
+
+    </style>
+  
+</head>
+<body onload = "rgb(), distance(), humidity_temp()">
+<ul>
+  <li><a onclick="exit3()" href="#">My Classrooms</a></li>
+  <li><a onclick="exit2()" href="#">My Projects</a></li>
+  <li><a onclick="exit4()" href="#">My Robots</a></li>
+  <li><a class="active" onclick="exit6()" href="">Editor</a></li>
+  <li><a onclick="exit5()" href="#">My Account</a></li>
+  <li><a onclick="exit()" href="logout.php?logout">LogOut</a></li>
+</ul>
+<h3>Hi, <?php echo $fname ?> <?php echo $lname ?> User ID: <?php echo $user_id ?> Classroom:  <?php echo $classrooms; ?> Classroom Code: <?php echo $userRow2['classroom_unique_code']; ?> Project ID: <?php echo $id ?> Project Name: <?php echo $blockly_name ?></h3>
+  <table width="100%" height="60%">
+    <tr>
+      <td>          
+          <h1 id="title">...</h1>
+      </td>
+      <td class="farSide">
+        <select id="languageMenu"></select>
+      </td>
+    </tr>
+    <tr>
+      <td colspan=2>
+        <table width="100%">
+          <tr id="tabRow" height="1em">
+            <td id="tab_blocks" class="tabon">...</td>
+            <td class="tabmin">&nbsp;</td>
+            <td id="tab_javascript" class="taboff">JavaScript</td>
+            <td class="tabmin">&nbsp;</td>
+            <td id="tab_python" class="taboff">Python</td>
+            <td class="tabmin">&nbsp;</td>
+            <td id="tab_php" class="taboff">PHP</td>
+            <td class="tabmin">&nbsp;</td>
+            <td id="tab_lua" class="taboff">Lua</td>
+            <td class="tabmin">&nbsp;</td>
+            <td id="tab_dart" class="taboff">Dart</td>
+            <td class="tabmin">&nbsp;</td>
+            <td id="tab_xml" class="taboff">XML</td>
+            <td class="tabmax">
+				<button id="trashButton" class="notext" title="...">
+                <img src='../../media/1x1.gif' class="trash icon21">
+				</button>
+				<button id="linkButton" class="notext" title="..." hidden>
+                <img src='../../media/1x1.gif' class="link icon21">
+				</button>
+				<button onclick="nextStep()" class="notext primary" title="...">
+                <img src='../../media/1x1.gif' class="run icon21">
+				</button>
+				<button onclick="parseCode()">Prepare</button>
+				<button onclick="stepCode()" id="stepButton" hidden>Play (step by step)</button>
+				<button id="runButton" class="notext" title="..." hidden>
+                <img src='../../media/1x1.gif' class="run icon21" >
+				</button>
+        <button onclick="export_1()">Save</button>
+        <button onclick="import_1()">Load</button>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+    <tr>
+      <td height="100%" colspan=2 id="content_area">
+      </td>
+    </tr>
+  </table>
+  <div id="content_blocks" class="content"></div>
+  <pre id="content_javascript" class="content"></pre>
+  <pre id="content_python" class="content"></pre>
+  <pre id="content_php" class="content"></pre>
+  <pre id="content_lua" class="content"></pre>
+  <pre id="content_dart" class="content"></pre>
+  <textarea id="content_xml" class="content" wrap="on"></textarea>
+
+  <xml id="toolbox" style="display: none">
+    <category name="{catLogic}" colour="210">
+      <block type="controls_if"></block>
+      <block type="logic_compare"></block>
+      <block type="logic_operation"></block>
+      <block type="logic_negate"></block>
+      <block type="logic_boolean"></block>
+      <block type="logic_null"></block>
+      <block type="logic_ternary"></block>
+    </category>
+    <category name="{catLoops}" colour="120">
+      <block type="controls_repeat_ext">
+        <value name="TIMES">
+          <shadow type="math_number">
+            <field name="NUM">10</field>
+          </shadow>
+        </value>
+      </block>
+      <block type="controls_whileUntil"></block>
+      <block type="controls_for">
+        <value name="FROM">
+          <shadow type="math_number">
+            <field name="NUM">1</field>
+          </shadow>
+        </value>
+        <value name="TO">
+          <shadow type="math_number">
+            <field name="NUM">10</field>
+          </shadow>
+        </value>
+        <value name="BY">
+          <shadow type="math_number">
+            <field name="NUM">1</field>
+          </shadow>
+        </value>
+      </block>
+      <block type="controls_forEach"></block>
+      <block type="controls_flow_statements"></block>
+    </category>
+    <category name="{catMath}" colour="230">
+      <block type="math_number"></block>
+      <block type="math_arithmetic">
+        <value name="A">
+          <shadow type="math_number">
+            <field name="NUM">1</field>
+          </shadow>
+        </value>
+        <value name="B">
+          <shadow type="math_number">
+            <field name="NUM">1</field>
+          </shadow>
+        </value>
+      </block>
+      <block type="math_single">
+        <value name="NUM">
+          <shadow type="math_number">
+            <field name="NUM">9</field>
+          </shadow>
+        </value>
+      </block>
+      <block type="math_trig">
+        <value name="NUM">
+          <shadow type="math_number">
+            <field name="NUM">45</field>
+          </shadow>
+        </value>
+      </block>
+      <block type="math_constant"></block>
+      <block type="math_number_property">
+        <value name="NUMBER_TO_CHECK">
+          <shadow type="math_number">
+            <field name="NUM">0</field>
+          </shadow>
+        </value>
+      </block>
+      <block type="math_round">
+        <value name="NUM">
+          <shadow type="math_number">
+            <field name="NUM">3.1</field>
+          </shadow>
+        </value>
+      </block>
+      <block type="math_on_list"></block>
+      <block type="math_modulo">
+        <value name="DIVIDEND">
+          <shadow type="math_number">
+            <field name="NUM">64</field>
+          </shadow>
+        </value>
+        <value name="DIVISOR">
+          <shadow type="math_number">
+            <field name="NUM">10</field>
+          </shadow>
+        </value>
+      </block>
+      <block type="math_constrain">
+        <value name="VALUE">
+          <shadow type="math_number">
+            <field name="NUM">50</field>
+          </shadow>
+        </value>
+        <value name="LOW">
+          <shadow type="math_number">
+            <field name="NUM">1</field>
+          </shadow>
+        </value>
+        <value name="HIGH">
+          <shadow type="math_number">
+            <field name="NUM">100</field>
+          </shadow>
+        </value>
+      </block>
+      <block type="math_random_int">
+        <value name="FROM">
+          <shadow type="math_number">
+            <field name="NUM">1</field>
+          </shadow>
+        </value>
+        <value name="TO">
+          <shadow type="math_number">
+            <field name="NUM">100</field>
+          </shadow>
+        </value>
+      </block>
+      <block type="math_random_float"></block>
+    </category>
+    <category name="{catText}" colour="160">
+      <block type="text"></block>
+      <block type="text_join"></block>
+      <block type="text_append">
+        <value name="TEXT">
+          <shadow type="text"></shadow>
+        </value>
+      </block>
+      <block type="text_length">
+        <value name="VALUE">
+          <shadow type="text">
+            <field name="TEXT">abc</field>
+          </shadow>
+        </value>
+      </block>
+      <block type="text_isEmpty">
+        <value name="VALUE">
+          <shadow type="text">
+            <field name="TEXT"></field>
+          </shadow>
+        </value>
+      </block>
+      <block type="text_indexOf">
+        <value name="VALUE">
+          <block type="variables_get">
+            <field name="VAR">{textVariable}</field>
+          </block>
+        </value>
+        <value name="FIND">
+          <shadow type="text">
+            <field name="TEXT">abc</field>
+          </shadow>
+        </value>
+      </block>
+      <block type="text_charAt">
+        <value name="VALUE">
+          <block type="variables_get">
+            <field name="VAR">{textVariable}</field>
+          </block>
+        </value>
+      </block>
+      <block type="text_getSubstring">
+        <value name="STRING">
+          <block type="variables_get">
+            <field name="VAR">{textVariable}</field>
+          </block>
+        </value>
+      </block>
+      <block type="text_changeCase">
+        <value name="TEXT">
+          <shadow type="text">
+            <field name="TEXT">abc</field>
+          </shadow>
+        </value>
+      </block>
+      <block type="text_trim">
+        <value name="TEXT">
+          <shadow type="text">
+            <field name="TEXT">abc</field>
+          </shadow>
+        </value>
+      </block>
+      <block type="text_print">
+        <value name="TEXT">
+          <shadow type="text">
+            <field name="TEXT">abc</field>
+          </shadow>
+        </value>
+      </block>
+      <block type="text_prompt_ext">
+        <value name="TEXT">
+          <shadow type="text">
+            <field name="TEXT">abc</field>
+          </shadow>
+        </value>
+      </block>
+    </category>
+    <category name="{catLists}" colour="260">
+      <block type="lists_create_with">
+        <mutation items="0"></mutation>
+      </block>
+      <block type="lists_create_with"></block>
+      <block type="lists_repeat">
+        <value name="NUM">
+          <shadow type="math_number">
+            <field name="NUM">5</field>
+          </shadow>
+        </value>
+      </block>
+      <block type="lists_length"></block>
+      <block type="lists_isEmpty"></block>
+      <block type="lists_indexOf">
+        <value name="VALUE">
+          <block type="variables_get">
+            <field name="VAR">{listVariable}</field>
+          </block>
+        </value>
+      </block>
+      <block type="lists_getIndex">
+        <value name="VALUE">
+          <block type="variables_get">
+            <field name="VAR">{listVariable}</field>
+          </block>
+        </value>
+      </block>
+      <block type="lists_setIndex">
+        <value name="LIST">
+          <block type="variables_get">
+            <field name="VAR">{listVariable}</field>
+          </block>
+        </value>
+      </block>
+      <block type="lists_getSublist">
+        <value name="LIST">
+          <block type="variables_get">
+            <field name="VAR">{listVariable}</field>
+          </block>
+        </value>
+      </block>
+      <block type="lists_split">
+        <value name="DELIM">
+          <shadow type="text">
+            <field name="TEXT">,</field>
+          </shadow>
+        </value>
+      </block>
+    </category>
+    <category name="{catColour}" colour="20">
+      <block type="colour_picker"></block>
+      <block type="colour_random"></block>
+      <block type="colour_rgb">
+        <value name="RED">
+          <shadow type="math_number">
+            <field name="NUM">100</field>
+          </shadow>
+        </value>
+        <value name="GREEN">
+          <shadow type="math_number">
+            <field name="NUM">50</field>
+          </shadow>
+        </value>
+        <value name="BLUE">
+          <shadow type="math_number">
+            <field name="NUM">0</field>
+          </shadow>
+        </value>
+      </block>
+      <block type="colour_blend">
+        <value name="COLOUR1">
+          <shadow type="colour_picker">
+            <field name="COLOUR">#ff0000</field>
+          </shadow>
+        </value>
+        <value name="COLOUR2">
+          <shadow type="colour_picker">
+            <field name="COLOUR">#3333ff</field>
+          </shadow>
+        </value>
+        <value name="RATIO">
+          <shadow type="math_number">
+            <field name="NUM">0.5</field>
+          </shadow>
+        </value>
+      </block>
+    </category>
+    <sep></sep>
+	<category name="Robot" colour="150">
+		<block type="js_script"></block>
+		<block type="servo1">
+			<value name="angle">
+				<block type="math_number">
+				<field name="NUM"></field>
+				</block>
+			</value>
+		</block>
+		
+		<block type="move_forward">
+			<value name="distance">
+				<block type="math_number">
+				<field name="NUM">500</field>
+				</block>
+			</value>
+		</block>
+		<block type="move_backward">
+			<value name="distance">
+				<block type="math_number">
+				<field name="NUM">500</field>
+				</block>
+			</value>
+		</block>
+		<block type="turn_left">
+			<value name="angle">
+				<block type="math_number">
+				<field name="NUM">90</field>
+				</block>
+			</value>
+		</block>
+		<block type="turn_right">
+			<value name="angle">
+				<block type="math_number">
+				<field name="NUM">90</field>
+				</block>
+			</value>
+		</block>
+		<block type = "wait">
+		<value name="wait">
+				<block type="math_number">
+				<field name="NUM">0</field>
+				</block>
+			</value>
+		</block>
+      
+      
+	</category>
+  <category name="Sensor Values" colour="150">
+    <block type = "red_sensor"></block>
+    <block type = "green_sensor"></block>
+    <block type = "blue_sensor"></block>
+    <block type = "distance_sensor"></block>
+	<block type = "sensor_humidity"></block>
+	<block type = "sensor_temperature"></block>
+  </category>
+  <category name = "Display - Basic" colour = "330">
+  <block type = "basic_led">
+  <value name="led_number">
+				<block type="math_number">
+				<field name="NUM">9</field>
+				</block>
+			</value>
+  <value name="time">
+				<block type="math_number">
+				<field name="NUM">0</field>
+				</block>
+			</value>
+  </block>
+  <block type = "basic_led1">
+  <value name="time">
+				<block type="math_number">
+				<field name="NUM">0</field>
+				</block>
+			</value>
+  </block>
+  <block type = "basic_led2">
+  <value name = "led_number">
+  <block type="lists_create_with"></block>
+  </value>
+  <value name="time">
+				<block type="math_number">
+				<field name="NUM">0</field>
+				</block>
+			</value>
+  </block>
+  <block type = "police_lights">
+	  <value name = "speed">
+		<block type = "math_number">
+		<field name = "NUM">0</field>
+		</block>
+	</value>
+	<value name = "loops">
+		<block type = "math_number">
+		<field name = "NUM">0</field>
+		</block>
+	</value>
+	</block>
+	<block type = "loading"></block>
+	<block type = "disco"><value name = "time">
+		<block type = "math_number">
+		<field name = "NUM">0</field>
+		</block>
+	</value></block>
+	<block type = "rainbow">
+	<value name = "time">
+		<block type = "math_number">
+		<field name = "NUM">0</field>
+		</block>
+	</value>
+	</block>
+  </category>
+  <category name = "Display - Advanced" colour = "330">
+  <block type="robot_led">
+			<value name="led_number">
+				<block type="math_number">
+				<field name="NUM">9</field>
+				</block>
+			</value>
+			<value name="r">
+				<block type="math_number">
+				<field name="NUM">255</field>
+				</block>
+			</value>
+			<value name="g">
+				<block type="math_number">
+				<field name="NUM">0</field>
+				</block>
+			</value>
+			<value name="b">
+				<block type="math_number">
+				<field name="NUM">0</field>
+				</block>
+			</value>
+			<value name="time">
+				<block type="math_number">
+				<field name="NUM">0</field>
+				</block>
+			</value>
+		</block>
+		<block type="robot_led1">
+			<value name="r">
+				<block type="math_number">
+				<field name="NUM">255</field>
+				</block>
+			</value>
+			<value name="g">
+				<block type="math_number">
+				<field name="NUM">0</field>
+				</block>
+			</value>
+			<value name="b">
+				<block type="math_number">
+				<field name="NUM">0</field>
+				</block>
+			</value>
+			<value name="time">
+				<block type="math_number">
+				<field name="NUM">0</field>
+				</block>
+			</value>
+		</block>
+		<block type="robot_led2">
+			<value name="led_number">
+			<block type="lists_create_with"></block>
+			</value>
+			<value name="r">
+				<block type="math_number">
+				<field name="NUM">255</field>
+				</block>
+			</value>
+			<value name="g">
+				<block type="math_number">
+				<field name="NUM">0</field>
+				</block>
+			</value>
+			<value name="b">
+				<block type="math_number">
+				<field name="NUM">0</field>
+				</block>
+			</value>
+			<value name="time">
+				<block type="math_number">
+				<field name="NUM">0</field>
+				</block>
+			</value>
+		</block>
+		<block type = "turn_off">
+		</block>
+		<block type = "oled_print">
+ <value name="time">
+				<block type="math_number">
+				<field name="NUM">0</field>
+				</block>
+			</value>
+      </block>
+	  <block type = "random_led"><value name = "time">
+		<block type = "math_number">
+		<field name = "NUM">0</field>
+		</block>
+	</value></block>
+  </category>
+  <category name = "Sound" colour="70">
+  <block type = "rttl">
+  <value name="speed">
+				<block type="math_number">
+				<field name="NUM">0</field>
+				</block>
+			</value>
+			<value name="volume">
+				<block type="math_number">
+				<field name="NUM">0</field>
+				</block>
+			</value>
+			<value name="play">
+				<block type="math_number">
+				<field name="NUM">0</field>
+				</block>
+			</value>
+  </block>
+  <block type = "custom_rttl">
+  <value name="speed">
+				<block type="math_number">
+				<field name="NUM">0</field>
+				</block>
+			</value>
+			<value name="volume">
+				<block type="math_number">
+				<field name="NUM">0</field>
+				</block>
+			</value>
+  </block>
+  </category>
+  <sep></sep>
+  <category name="Clickable" colour="90">
+  <block type = "piano"></block>
+  <block type = "led_color">
+	<value name = "time">
+		<block type = "math_number">
+		<field name = "NUM">0</field>
+		</block>
+	</value>
+  </block>
+  <block type = "led_super"><value name = "time">
+		<block type = "math_number">
+		<field name = "NUM">0</field>
+		</block>
+	</value></block>
+  </category>
+	<sep></sep>
+    <category name="{catVariables}" colour="330" custom="VARIABLE"></category>
+    <category name="{catFunctions}" colour="290" custom="PROCEDURE"></category>
+  </xml>
+
+  <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+  <script type="text/javascript" src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
+  <p id = "demo" hidden></p>
+  <script>
+  $(document).ready(function(){
+    $("#toggle").click(function(){
+        $("#robot_data").toggle(1000);
+    });
+});
+  
+  //_________________________________CUSTOM BLOCKS___________________________________
+
+  Blockly.Blocks['rainbow'] = {
+  init: function() {
+	  this.appendDummyInput("robots")
+		.setAlign(Blockly.ALIGN_CENTRE)
+        .appendField(new Blockly.FieldDropdown([<?php
+$sql = "SELECT robot_name, robot_mac_address FROM robot WHERE classroom_id = '$classroom_id'";
+$result = mysql_query($sql, $conn)
+or die ('Problem with query' . mysql_error());
+while ($row = mysql_fetch_array($result)){ 
+
+$id=$row["robot_name"];
+$name=$row["robot_mac_address"];
+  echo "[\"$id\", \"$name\"],"; 
+}
+?>]), "robots");
+this.appendDummyInput()
+        .setAlign(Blockly.ALIGN_CENTRE)
+        .appendField("Rainbow");
+	this.appendDummyInput()
+        .appendField(new Blockly.FieldImage("https://cdn-shop.adafruit.com/1200x900/1463-03.jpg", 100, 36, "*"));
+	this.appendValueInput("time")
+        .setCheck("Number")
+		.setAlign(Blockly.ALIGN_CENTRE)
+        .appendField("Time");
+    this.setPreviousStatement(true, null);
+    this.setNextStatement(true, null);
+    this.setTooltip('');
+    this.setHelpUrl('http://www.example.com/');
+  }
+};
+
+Blockly.JavaScript['rainbow'] = function(block) {
+  // TODO: Assemble JavaScript into code variable.
+  var value_r = Math.floor(Math.random() * 256);
+  var value_g = Math.floor(Math.random() * 128);
+  var value_b = Math.floor(Math.random() * 64);
+  var value_time = Blockly.JavaScript.valueToCode(block, 'time', Blockly.JavaScript.ORDER_ATOMIC);
+  var dropdown_robots = block.getFieldValue('robots');
+  var value_robots = Blockly.JavaScript.valueToCode(block, 'robots', Blockly.JavaScript.ORDER_ATOMIC);
+  var code = 'publish("classroom/<?php echo $classroom_unique_code ?>/blockly/<?php echo $id ?>",\'{"robot":[{"robot_mac_address":"' + dropdown_robots + '","command":[{"led_ring":{"led_type": 2, "led_red":\' + ' + value_r + ' + \',"led_green":\' + ' + value_g + ' + \',"led_blue":\' + ' + value_b + ' + \',"led_time":\' + ' + value_time + '\ + \'}}]}]}\');';
+  return code;
+};
+  
+  Blockly.Blocks['random_led'] = {
+  init: function() {
+	  this.appendDummyInput("robots")
+		.setAlign(Blockly.ALIGN_CENTRE)
+        .appendField(new Blockly.FieldDropdown([<?php
+$sql = "SELECT robot_name, robot_mac_address FROM robot WHERE classroom_id = '$classroom_id'";
+$result = mysql_query($sql, $conn)
+or die ('Problem with query' . mysql_error());
+while ($row = mysql_fetch_array($result)){ 
+
+$id=$row["robot_name"];
+$name=$row["robot_mac_address"];
+  echo "[\"$id\", \"$name\"],"; 
+}
+?>]), "robots");
+    this.appendDummyInput()
+        .setAlign(Blockly.ALIGN_CENTRE)
+        .appendField("Set LED color randomly");
+	this.appendValueInput("time")
+        .setCheck("Number")
+		.setAlign(Blockly.ALIGN_CENTRE)
+        .appendField("Time");
+    this.setPreviousStatement(true, null);
+    this.setNextStatement(true, null);
+    this.setTooltip('');
+	this.setInputsInline(true);
+    this.setHelpUrl('http://www.example.com/');
+  }
+};
+
+Blockly.JavaScript['random_led'] = function(block) {
+  // TODO: Assemble JavaScript into code variable.
+  var value_r = Math.floor(Math.random() * 256);
+  var value_g = Math.floor(Math.random() * 128);
+  var value_b = Math.floor(Math.random() * 64);
+  var value_time = Blockly.JavaScript.valueToCode(block, 'time', Blockly.JavaScript.ORDER_ATOMIC);
+  var dropdown_robots = block.getFieldValue('robots');
+  var value_robots = Blockly.JavaScript.valueToCode(block, 'robots', Blockly.JavaScript.ORDER_ATOMIC);
+  var code = 'publish("classroom/<?php echo $classroom_unique_code ?>/blockly/<?php echo $id ?>",\'{"robot":[{"robot_mac_address":"' + dropdown_robots + '","command":[{"led_ring":{"led_type": 2, "led_red":\' + ' + value_r + ' + \',"led_green":\' + ' + value_g + ' + \',"led_blue":\' + ' + value_b + ' + \',"led_time":\' + ' + value_time + '\ + \'}}]}]}\');';
+  return code;
+};
+  
+  
+  Blockly.Blocks['disco'] = {
+  init: function() {
+	  this.appendDummyInput("robots")
+		.setAlign(Blockly.ALIGN_CENTRE)
+        .appendField(new Blockly.FieldDropdown([<?php
+$sql = "SELECT robot_name, robot_mac_address FROM robot WHERE classroom_id = '$classroom_id'";
+$result = mysql_query($sql, $conn)
+or die ('Problem with query' . mysql_error());
+while ($row = mysql_fetch_array($result)){ 
+
+$id=$row["robot_name"];
+$name=$row["robot_mac_address"];
+  echo "[\"$id\", \"$name\"],"; 
+}
+?>]), "robots");
+    this.appendDummyInput()
+        .setAlign(Blockly.ALIGN_CENTRE)
+        .appendField("Disco");
+    this.appendDummyInput()
+        .appendField(new Blockly.FieldImage("https://lh4.ggpht.com/DVTa_QvpLDZFxkn66e0LfqIvvEMafFTdfnYTHZRzDj3eRsPnXc56Z5KzVy5yCX1CMw=w300", 100, 36, "*"));
+    this.setPreviousStatement(true, null);
+    this.setNextStatement(true, null);
+    this.setTooltip('');
+    this.setHelpUrl('http://www.example.com/');
+  }
+};
+
+Blockly.JavaScript['disco'] = function(block) {
+  // TODO: Assemble JavaScript into code variable.
+  var dropdown_robots = block.getFieldValue('robots');
+  var value_robots = Blockly.JavaScript.valueToCode(block, 'robots', Blockly.JavaScript.ORDER_ATOMIC);
+  var code = '...';
+  return code;
+};
+  
+  
+  Blockly.Blocks['loading'] = {
+  init: function() {
+	  this.appendDummyInput("robots")
+		.setAlign(Blockly.ALIGN_CENTRE)
+        .appendField(new Blockly.FieldDropdown([<?php
+$sql = "SELECT robot_name, robot_mac_address FROM robot WHERE classroom_id = '$classroom_id'";
+$result = mysql_query($sql, $conn)
+or die ('Problem with query' . mysql_error());
+while ($row = mysql_fetch_array($result)){ 
+
+$id=$row["robot_name"];
+$name=$row["robot_mac_address"];
+  echo "[\"$id\", \"$name\"],"; 
+}
+?>]), "robots");
+    this.appendDummyInput()
+        .setAlign(Blockly.ALIGN_CENTRE)
+        .appendField("Loading ...");
+    this.appendDummyInput()
+        .appendField(new Blockly.FieldImage("http://www.iceflowstudios.com/v3/wp-content/uploads/2013/01/LoadingCircle_firstani.gif", 100, 36, "*"));
+    this.setPreviousStatement(true, null);
+    this.setNextStatement(true, null);
+    this.setTooltip('');
+    this.setHelpUrl('http://www.example.com/');
+  }
+};
+
+Blockly.JavaScript['loading'] = function(block) {
+  // TODO: Assemble JavaScript into code variable.
+  var dropdown_robots = block.getFieldValue('robots');
+  var value_robots = Blockly.JavaScript.valueToCode(block, 'robots', Blockly.JavaScript.ORDER_ATOMIC);
+  var code = 'publish("classroom/<?php echo $classroom_unique_code ?>/blockly/<?php echo $id ?>",\'{"robot":[{"robot_mac_address":\"'+dropdown_robots+'\","command":[{"led_ring":{"led_type":6,"led_position": [1, 4, 7, 10], "led_red1": 255, "led_green1": 0, "led_blue1": 0,"led_red2": 255, "led_green2": 255, "led_blue2": 0,"led_red3": 0, "led_green3": 0, "led_blue3": 255,"led_red4": 0, "led_green4": 255, "led_blue4": 0,"led_time":70,"led_loop":200}} ]}]}\');';
+  return code;
+};
+  
+  
+  Blockly.Blocks['police_lights'] = {
+  init: function() {
+	  this.appendDummyInput("robots")
+		.setAlign(Blockly.ALIGN_CENTRE)
+        .appendField(new Blockly.FieldDropdown([<?php
+$sql = "SELECT robot_name, robot_mac_address FROM robot WHERE classroom_id = '$classroom_id'";
+$result = mysql_query($sql, $conn)
+or die ('Problem with query' . mysql_error());
+while ($row = mysql_fetch_array($result)){ 
+
+$id=$row["robot_name"];
+$name=$row["robot_mac_address"];
+  echo "[\"$id\", \"$name\"],"; 
+}
+?>]), "robots");
+    this.appendDummyInput()
+        .appendField("Police Lights");
+    this.appendDummyInput()
+        .appendField(new Blockly.FieldImage("https://i.ytimg.com/vi/itFy9DzbOQg/hqdefault.jpg", 70, 50, "*"));
+	this.appendValueInput("speed")
+        .setCheck("Number")
+		.setAlign(Blockly.ALIGN_CENTRE)
+        .appendField("Speed");
+	this.appendValueInput("loops")
+        .setCheck("Number")
+		.setAlign(Blockly.ALIGN_CENTRE)
+        .appendField("Loops");
+    this.setPreviousStatement(true, null);
+    this.setNextStatement(true, null);
+    this.setTooltip('');
+    this.setHelpUrl('http://www.example.com/');
+  }
+};
+
+Blockly.JavaScript['police_lights'] = function(block) {
+  // TODO: Assemble JavaScript into code variable.
+  var dropdown_robots = block.getFieldValue('robots');
+  var value_robots = Blockly.JavaScript.valueToCode(block, 'robots', Blockly.JavaScript.ORDER_ATOMIC);
+   var value_speed = Blockly.JavaScript.valueToCode(block, 'speed', Blockly.JavaScript.ORDER_ATOMIC);
+    var value_loops = Blockly.JavaScript.valueToCode(block, 'loops', Blockly.JavaScript.ORDER_ATOMIC);
+  var code = 'publish("classroom/<?php echo $classroom_unique_code ?>/blockly/<?php echo $id ?>",\'{"robot":[{"robot_mac_address":\"'+dropdown_robots+'\","command":[{"led_ring":{"led_type":5,"led_position1": [7,8,9,10,11,12],"led_position2": [1, 2,3,4,5,6], "led_red1": 0, "led_green1": 0, "led_blue1": 255,"led_red2": 255, "led_green2": 0, "led_blue2": 0,"led_time":'+value_speed+',"led_loop":'+value_loops+'}} ]}]}\');';
+  return code;
+};
+  
+  
+function hexToRgb(hex) {
+    var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result ? {
+        r: parseInt(result[1], 16),
+        g: parseInt(result[2], 16),
+        b: parseInt(result[3], 16)
+    } : null;
+}
+
+Blockly.Blocks['led_super'] = {
+  init: function() {
+	  this.appendDummyInput("robots")
+		.setAlign(Blockly.ALIGN_CENTRE)
+        .appendField(new Blockly.FieldDropdown([<?php
+$sql = "SELECT robot_name, robot_mac_address FROM robot WHERE classroom_id = '$classroom_id'";
+$result = mysql_query($sql, $conn)
+or die ('Problem with query' . mysql_error());
+while ($row = mysql_fetch_array($result)){ 
+
+$id=$row["robot_name"];
+$name=$row["robot_mac_address"];
+  echo "[\"$id\", \"$name\"],"; 
+}
+?>]), "robots");
+    this.appendDummyInput()
+        .appendField("LED COLOR")
+        .appendField(new Blockly.FieldColour("#ff0000"), "led");
+	this.appendValueInput("time")
+        .setCheck("Number")
+		.setAlign(Blockly.ALIGN_CENTRE)
+        .appendField("Time");
+    this.setPreviousStatement(true, null);
+    this.setNextStatement(true, null);
+    this.setTooltip('');
+    this.setHelpUrl('http://www.example.com/');
+  }
+}
+
+Blockly.JavaScript['led_super'] = function(block) {
+  var colour_led = block.getFieldValue('led');
+  var dropdown_robots = block.getFieldValue('robots');
+  var value_robots = Blockly.JavaScript.valueToCode(block, 'robots', Blockly.JavaScript.ORDER_ATOMIC);
+  var value_time = Blockly.JavaScript.valueToCode(block, 'time', Blockly.JavaScript.ORDER_ATOMIC);
+  // TODO: Assemble JavaScript into code variable.
+  var code = 'publish("classroom/<?php echo $classroom_unique_code ?>/blockly/<?php echo $id ?>",\'{"robot":[{"robot_mac_address":\"'+dropdown_robots+'\","command":[{"led_ring":{"led_type": 2, "led_red":'+hexToRgb(colour_led).r+',"led_green":'+hexToRgb(colour_led).g+',"led_blue":'+hexToRgb(colour_led).b+',"led_time":\' + ' + value_time + '\ + \'}}]}]}\');'; 
+  return code;
+};
+
+Blockly.Blocks['basic_led'] = {
+  init: function() {
+    this.appendDummyInput("robots")
+		.setAlign(Blockly.ALIGN_CENTRE)
+        .appendField(new Blockly.FieldDropdown([<?php
+$sql = "SELECT robot_name, robot_mac_address FROM robot WHERE classroom_id = '$classroom_id'";
+$result = mysql_query($sql, $conn)
+or die ('Problem with query' . mysql_error());
+while ($row = mysql_fetch_array($result)){ 
+
+$id=$row["robot_name"];
+$name=$row["robot_mac_address"];
+  echo "[\"$id\", \"$name\"],"; 
+}
+?>]), "robots");
+    this.appendValueInput("led_number")
+        .setAlign(Blockly.ALIGN_CENTRE)
+		.setCheck("Number")
+        .appendField("LED Number");
+    this.appendDummyInput()
+        .appendField("LED COLOR")
+        .appendField(new Blockly.FieldColour("#ff0000"), "led");
+	this.appendValueInput("time")
+        .setCheck("Number")
+        .appendField("Time");
+    this.setPreviousStatement(true, null);
+    this.setNextStatement(true, null);
+    this.setColour(290);
+    this.setTooltip('');
+    this.setHelpUrl('http://www.example.com/');
+  }
+};
+
+
+Blockly.JavaScript['basic_led'] = function(block) {
+  var colour_led = block.getFieldValue('led');
+  var dropdown_robots = block.getFieldValue('robots');
+  var value_robots = Blockly.JavaScript.valueToCode(block, 'robots', Blockly.JavaScript.ORDER_ATOMIC);
+  var value_led_number = Blockly.JavaScript.valueToCode(block, 'led_number', Blockly.JavaScript.ORDER_ATOMIC);
+  var value_r = Blockly.JavaScript.valueToCode(block, 'r', Blockly.JavaScript.ORDER_ATOMIC);
+  var value_g = Blockly.JavaScript.valueToCode(block, 'g', Blockly.JavaScript.ORDER_ATOMIC);
+  var value_b = Blockly.JavaScript.valueToCode(block, 'b', Blockly.JavaScript.ORDER_ATOMIC);
+  var value_time = Blockly.JavaScript.valueToCode(block, 'time', Blockly.JavaScript.ORDER_ATOMIC);
+  // TODO: Assemble JavaScript into code variable.
+ 
+
+	  var code = 'publish("classroom/<?php echo $classroom_unique_code ?>/blockly/<?php echo $id ?>",\'{"robot":[{"robot_mac_address":"' + dropdown_robots + '","command":[{"led_ring":{"led_type": 1, "led_position": \' + ' + value_led_number + ' + \' , "led_red":'+hexToRgb(colour_led).r+',"led_green":'+hexToRgb(colour_led).g+',"led_blue":'+hexToRgb(colour_led).b+',"led_time":\' + ' + value_time + '\ + \'}}]}]}\');';
+		return code;
+};
+
+Blockly.Blocks['basic_led1'] = {
+  init: function() {
+    this.appendDummyInput("robots")
+		.setAlign(Blockly.ALIGN_CENTRE)
+        .appendField(new Blockly.FieldDropdown([<?php
+$sql = "SELECT robot_name, robot_mac_address FROM robot WHERE classroom_id = '$classroom_id'";
+$result = mysql_query($sql, $conn)
+or die ('Problem with query' . mysql_error());
+while ($row = mysql_fetch_array($result)){ 
+
+$id=$row["robot_name"];
+$name=$row["robot_mac_address"];
+  echo "[\"$id\", \"$name\"],"; 
+}
+?>]), "robots");
+    this.appendDummyInput()
+        .appendField("LED COLOR")
+        .appendField(new Blockly.FieldColour("#ff0000"), "led");
+		this.appendValueInput("time")
+        .setCheck("Number")
+        .appendField("Time");
+	this.setInputsInline(true);
+    this.setPreviousStatement(true, null);
+    this.setNextStatement(true, null);
+    this.setColour(290);
+    this.setTooltip('');
+    this.setHelpUrl('http://www.example.com/');
+  }
+};
+
+
+Blockly.JavaScript['basic_led1'] = function(block) {
+  var colour_led = block.getFieldValue('led');
+  var dropdown_robots = block.getFieldValue('robots');
+  var value_robots = Blockly.JavaScript.valueToCode(block, 'robots', Blockly.JavaScript.ORDER_ATOMIC);
+  var value_r = Blockly.JavaScript.valueToCode(block, 'r', Blockly.JavaScript.ORDER_ATOMIC);
+  var value_g = Blockly.JavaScript.valueToCode(block, 'g', Blockly.JavaScript.ORDER_ATOMIC);
+  var value_b = Blockly.JavaScript.valueToCode(block, 'b', Blockly.JavaScript.ORDER_ATOMIC);
+  var value_time = Blockly.JavaScript.valueToCode(block, 'time', Blockly.JavaScript.ORDER_ATOMIC);
+  // TODO: Assemble JavaScript into code variable.
+ 
+
+	  var code = 'publish("classroom/<?php echo $classroom_unique_code ?>/blockly/<?php echo $id ?>",\'{"robot":[{"robot_mac_address":"' + dropdown_robots + '","command":[{"led_ring":{"led_type": 2, "led_red":'+hexToRgb(colour_led).r+',"led_green":'+hexToRgb(colour_led).g+',"led_blue":'+hexToRgb(colour_led).b+',"led_time":\' + ' + value_time + '\ + \'}}]}]}\');';
+		return code;
+	 
+	 
+ 
+  
+};
+
+Blockly.Blocks['basic_led2'] = {
+  init: function() {
+    this.appendDummyInput("robots")
+		.setAlign(Blockly.ALIGN_CENTRE)
+        .appendField(new Blockly.FieldDropdown([<?php
+$sql = "SELECT robot_name, robot_mac_address FROM robot WHERE classroom_id = '$classroom_id'";
+$result = mysql_query($sql, $conn)
+or die ('Problem with query' . mysql_error());
+while ($row = mysql_fetch_array($result)){ 
+
+$id=$row["robot_name"];
+$name=$row["robot_mac_address"];
+  echo "[\"$id\", \"$name\"],"; 
+}
+?>]), "robots");
+    this.appendValueInput("led_number")
+        .setAlign(Blockly.ALIGN_CENTRE)
+		.setCheck("Array")
+        .appendField("LED ARRAY");
+    this.appendDummyInput()
+        .appendField("LED COLOR")
+        .appendField(new Blockly.FieldColour("#ff0000"), "led");
+	this.appendValueInput("time")
+        .setCheck("Number")
+        .appendField("Time");
+    this.setPreviousStatement(true, null);
+    this.setNextStatement(true, null);
+    this.setColour(290);
+    this.setTooltip('');
+    this.setHelpUrl('http://www.example.com/');
+  }
+};
+
+
+Blockly.JavaScript['basic_led2'] = function(block) {
+  var colour_led = block.getFieldValue('led');
+  var dropdown_robots = block.getFieldValue('robots');
+  var value_robots = Blockly.JavaScript.valueToCode(block, 'robots', Blockly.JavaScript.ORDER_ATOMIC);
+  var value_led_number = Blockly.JavaScript.valueToCode(block, 'led_number', Blockly.JavaScript.ORDER_ATOMIC);
+  var value_r = Blockly.JavaScript.valueToCode(block, 'r', Blockly.JavaScript.ORDER_ATOMIC);
+  var value_g = Blockly.JavaScript.valueToCode(block, 'g', Blockly.JavaScript.ORDER_ATOMIC);
+  var value_b = Blockly.JavaScript.valueToCode(block, 'b', Blockly.JavaScript.ORDER_ATOMIC);
+  var value_time = Blockly.JavaScript.valueToCode(block, 'time', Blockly.JavaScript.ORDER_ATOMIC);
+  // TODO: Assemble JavaScript into code variable.
+ 
+
+	  var code = 'publish("classroom/<?php echo $classroom_unique_code ?>/blockly/<?php echo $id ?>",\'{"robot":[{"robot_mac_address":"' + dropdown_robots + '","command":[{"led_ring":{"led_type": 4, "led_position": ' + value_led_number + ' ,"led_red": ' + hexToRgb(colour_led).r + ',"led_green":' + hexToRgb(colour_led).g + ',"led_blue":' + hexToRgb(colour_led).b + ',"led_time":\' + ' + value_time + '\ + \'}}]}]}\');';
+		return code;
+};
+  
+  
+  fruits = [];
+  
+  
+ a = function myFunction() {
+    fruits.push("1");
+   code = document.getElementById("demo").innerHTML = fruits;
+   Blockly.JavaScript['piano'] = function(block) {
+		 dropdown_robots = block.getFieldValue("robots");
+		 value_robots = Blockly.JavaScript.valueToCode(block, 'robots', Blockly.JavaScript.ORDER_ATOMIC);
+		 dis = 'publish("classroom/<?php echo $classroom_unique_code ?>/blockly/<?php echo $id ?>",\'{"robot":[{"robot_mac_address":\"'+dropdown_robots+'\","command":[{"RTTTL":{"RTTTL_type":3,"RTTTL_freq":['+code+'],"RTTTL_vol":20,"RTTTL_speed":500, "RTTTL_pause":100}}]}]}\');';
+		 return dis;
+	 };
+};
+
+b = function myFunction() {
+    fruits.push("2");
+   code = document.getElementById("demo").innerHTML = fruits;
+   Blockly.JavaScript['piano'] = function(block) {
+		 dropdown_robots = block.getFieldValue("robots");
+		 value_robots = Blockly.JavaScript.valueToCode(block, 'robots', Blockly.JavaScript.ORDER_ATOMIC);
+		 dis = 'publish("classroom/<?php echo $classroom_unique_code ?>/blockly/<?php echo $id ?>",\'{"robot":[{"robot_mac_address":\"'+dropdown_robots+'\","command":[{"RTTTL":{"RTTTL_type":3,"RTTTL_freq":['+code+'],"RTTTL_vol":20,"RTTTL_speed":500, "RTTTL_pause":100}}]}]}\');';
+		 return dis;
+	 };
+};
+  
+c = function myFunction() {
+    fruits.push("3");
+   code = document.getElementById("demo").innerHTML = fruits;
+   Blockly.JavaScript['piano'] = function(block) {
+		 dropdown_robots = block.getFieldValue("robots");
+		 value_robots = Blockly.JavaScript.valueToCode(block, 'robots', Blockly.JavaScript.ORDER_ATOMIC);
+		 dis = 'publish("classroom/<?php echo $classroom_unique_code ?>/blockly/<?php echo $id ?>",\'{"robot":[{"robot_mac_address":\"'+dropdown_robots+'\","command":[{"RTTTL":{"RTTTL_type":3,"RTTTL_freq":['+code+'],"RTTTL_vol":20,"RTTTL_speed":500, "RTTTL_pause":100}}]}]}\');';
+		 return dis;
+	 };
+};
+
+d = function myFunction() {
+    fruits.push("4");
+   code = document.getElementById("demo").innerHTML = fruits;
+   Blockly.JavaScript['piano'] = function(block) {
+		 dropdown_robots = block.getFieldValue("robots");
+		 value_robots = Blockly.JavaScript.valueToCode(block, 'robots', Blockly.JavaScript.ORDER_ATOMIC);
+		 dis = 'publish("classroom/<?php echo $classroom_unique_code ?>/blockly/<?php echo $id ?>",\'{"robot":[{"robot_mac_address":\"'+dropdown_robots+'\","command":[{"RTTTL":{"RTTTL_type":3,"RTTTL_freq":['+code+'],"RTTTL_vol":20,"RTTTL_speed":500, "RTTTL_pause":100}}]}]}\');';
+		 return dis;
+	 };
+};
+
+e = function myFunction() {
+    fruits.push("5");
+   code = document.getElementById("demo").innerHTML = fruits;
+   Blockly.JavaScript['piano'] = function(block) {
+		 dropdown_robots = block.getFieldValue("robots");
+		 value_robots = Blockly.JavaScript.valueToCode(block, 'robots', Blockly.JavaScript.ORDER_ATOMIC);
+		 dis = 'publish("classroom/<?php echo $classroom_unique_code ?>/blockly/<?php echo $id ?>",\'{"robot":[{"robot_mac_address":\"'+dropdown_robots+'\","command":[{"RTTTL":{"RTTTL_type":3,"RTTTL_freq":['+code+'],"RTTTL_vol":20,"RTTTL_speed":500, "RTTTL_pause":100}}]}]}\');';
+		 return dis;
+	 };
+};
+
+f = function myFunction() {
+    fruits.push("6");
+   code = document.getElementById("demo").innerHTML = fruits;
+   Blockly.JavaScript['piano'] = function(block) {
+		 dropdown_robots = block.getFieldValue("robots");
+		 value_robots = Blockly.JavaScript.valueToCode(block, 'robots', Blockly.JavaScript.ORDER_ATOMIC);
+		 dis = 'publish("classroom/<?php echo $classroom_unique_code ?>/blockly/<?php echo $id ?>",\'{"robot":[{"robot_mac_address":\"'+dropdown_robots+'\","command":[{"RTTTL":{"RTTTL_type":3,"RTTTL_freq":['+code+'],"RTTTL_vol":20,"RTTTL_speed":500, "RTTTL_pause":100}}]}]}\');';
+		 return dis;
+	 };
+};
+
+g = function myFunction() {
+    fruits.push("7");
+   code = document.getElementById("demo").innerHTML = fruits;
+   Blockly.JavaScript['piano'] = function(block) {
+		 dropdown_robots = block.getFieldValue("robots");
+		 value_robots = Blockly.JavaScript.valueToCode(block, 'robots', Blockly.JavaScript.ORDER_ATOMIC);
+		 dis = 'publish("classroom/<?php echo $classroom_unique_code ?>/blockly/<?php echo $id ?>",\'{"robot":[{"robot_mac_address":\"'+dropdown_robots+'\","command":[{"RTTTL":{"RTTTL_type":3,"RTTTL_freq":['+code+'],"RTTTL_vol":20,"RTTTL_speed":500, "RTTTL_pause":100}}]}]}\');';
+		 return dis;
+	 };
+};
+
+blueish = function() {
+	Blockly.JavaScript['led_color'] = function(block) {
+		dropdown_robots = block.getFieldValue('robots');
+  value_robots = Blockly.JavaScript.valueToCode(block, 'robots', Blockly.JavaScript.ORDER_ATOMIC);
+  value_time = Blockly.JavaScript.valueToCode(block, 'time', Blockly.JavaScript.ORDER_ATOMIC);
+	code = 'publish("classroom/<?php echo $classroom_unique_code ?>/blockly/<?php echo $id ?>",\'{"robot":[{"robot_mac_address":\"'+dropdown_robots+'\","command":[{"led_ring":{"led_type": 2, "led_red":0,"led_green":255,"led_blue":255,"led_time":\' + ' + value_time + '\ + \'}}]}]}\');'; 
+	return code
+	};
+	alert ("Blueish Selected");
+};
+
+pinkish = function() {
+	Blockly.JavaScript['led_color'] = function(block) {
+		dropdown_robots = block.getFieldValue('robots');
+  value_robots = Blockly.JavaScript.valueToCode(block, 'robots', Blockly.JavaScript.ORDER_ATOMIC);
+  value_time = Blockly.JavaScript.valueToCode(block, 'time', Blockly.JavaScript.ORDER_ATOMIC);
+	code = 'publish("classroom/<?php echo $classroom_unique_code ?>/blockly/<?php echo $id ?>",\'{"robot":[{"robot_mac_address":\"'+dropdown_robots+'\","command":[{"led_ring":{"led_type": 2, "led_red":255,"led_green":0,"led_blue":255,"led_time":\' + ' + value_time + '\ + \'}}]}]}\');'; 
+	return code
+	};
+	alert ("Pinkish Selected");
+};
+
+yellow = function() {
+	Blockly.JavaScript['led_color'] = function(block) {
+		dropdown_robots = block.getFieldValue('robots');
+  value_robots = Blockly.JavaScript.valueToCode(block, 'robots', Blockly.JavaScript.ORDER_ATOMIC);
+  value_time = Blockly.JavaScript.valueToCode(block, 'time', Blockly.JavaScript.ORDER_ATOMIC);
+	code = 'publish("classroom/<?php echo $classroom_unique_code ?>/blockly/<?php echo $id ?>",\'{"robot":[{"robot_mac_address":\"'+dropdown_robots+'\","command":[{"led_ring":{"led_type": 2, "led_red":255,"led_green":255,"led_blue":0,"led_time":\' + ' + value_time + '\ + \'}}]}]}\');'; 
+	return code
+	};
+	alert ("Yellow Selected");
+};
+
+blue = function() {
+	Blockly.JavaScript['led_color'] = function(block) {
+		dropdown_robots = block.getFieldValue('robots');
+  value_robots = Blockly.JavaScript.valueToCode(block, 'robots', Blockly.JavaScript.ORDER_ATOMIC);
+  value_time = Blockly.JavaScript.valueToCode(block, 'time', Blockly.JavaScript.ORDER_ATOMIC);
+	code = 'publish("classroom/<?php echo $classroom_unique_code ?>/blockly/<?php echo $id ?>",\'{"robot":[{"robot_mac_address":\"'+dropdown_robots+'\","command":[{"led_ring":{"led_type": 2, "led_red":0,"led_green":0,"led_blue":255,"led_time":\' + ' + value_time + '\ + \'}}]}]}\');'; 
+	return code
+	};
+	alert ("Blue Selected");
+};
+
+green = function() {
+	Blockly.JavaScript['led_color'] = function(block) {
+		dropdown_robots = block.getFieldValue('robots');
+  value_robots = Blockly.JavaScript.valueToCode(block, 'robots', Blockly.JavaScript.ORDER_ATOMIC);
+  value_time = Blockly.JavaScript.valueToCode(block, 'time', Blockly.JavaScript.ORDER_ATOMIC);
+	code = 'publish("classroom/<?php echo $classroom_unique_code ?>/blockly/<?php echo $id ?>",\'{"robot":[{"robot_mac_address":\"'+dropdown_robots+'\","command":[{"led_ring":{"led_type": 2, "led_red":0,"led_green":255,"led_blue":0,"led_time":\' + ' + value_time + '\ + \'}}]}]}\');'; 
+	return code
+	};
+	alert ("Green Selected");
+};
+
+red = function() {
+	Blockly.JavaScript['led_color'] = function(block) {
+		dropdown_robots = block.getFieldValue('robots');
+  value_robots = Blockly.JavaScript.valueToCode(block, 'robots', Blockly.JavaScript.ORDER_ATOMIC);
+  value_time = Blockly.JavaScript.valueToCode(block, 'time', Blockly.JavaScript.ORDER_ATOMIC);
+	code = 'publish("classroom/<?php echo $classroom_unique_code ?>/blockly/<?php echo $id ?>",\'{"robot":[{"robot_mac_address":\"'+dropdown_robots+'\","command":[{"led_ring":{"led_type": 2, "led_red":255,"led_green":0,"led_blue":0,"led_time":\' + ' + value_time + '\ + \'}}]}]}\');'; 
+	return code
+	};
+	alert ("Red Selected");
+};
+
+white = function() {
+	Blockly.JavaScript['led_color'] = function(block) {
+		dropdown_robots = block.getFieldValue('robots');
+  value_robots = Blockly.JavaScript.valueToCode(block, 'robots', Blockly.JavaScript.ORDER_ATOMIC);
+  value_time = Blockly.JavaScript.valueToCode(block, 'time', Blockly.JavaScript.ORDER_ATOMIC);
+	code = 'publish("classroom/<?php echo $classroom_unique_code ?>/blockly/<?php echo $id ?>",\'{"robot":[{"robot_mac_address":\"'+dropdown_robots+'\","command":[{"led_ring":{"led_type": 2, "led_red":255,"led_green":255,"led_blue":255,"led_time":\' + ' + value_time + '\ + \'}}]}]}\');'; 
+	return code
+	};
+	alert ("White Selected");
+};
+
+Blockly.Blocks['led_color'] = {
+  init: function() {
+	  this.appendDummyInput("robots")
+		.setAlign(Blockly.ALIGN_CENTRE)
+        .appendField(new Blockly.FieldDropdown([<?php
+$sql = "SELECT robot_name, robot_mac_address FROM robot WHERE classroom_id = '$classroom_id'";
+$result = mysql_query($sql, $conn)
+or die ('Problem with query' . mysql_error());
+while ($row = mysql_fetch_array($result)){ 
+
+$id=$row["robot_name"];
+$name=$row["robot_mac_address"];
+  echo "[\"$id\", \"$name\"],"; 
+}
+?>]), "robots");
+    this.appendDummyInput()
+        .appendField(new Blockly.FieldClickImage("https://lh6.googleusercontent.com/nspclBbdkHTgXPGbCqS4_1HEJjoZXDUL_GequAeovmaTx26Tb9a3MhifMPcCarWmxVx41DqeZm0_AlE=w1920-h974", 25, 30, "*", blue))
+        .appendField(new Blockly.FieldClickImage("https://lh6.googleusercontent.com/0buz3QYaGmWOg0Anxxy4onCg_UZP7hBKE8gJd1CqBeas0sA1gBNKy204mjR71rIuMskMfIuZn7f22kg=w1920-h974", 25, 30, "*", blueish))
+        .appendField(new Blockly.FieldClickImage("https://lh3.googleusercontent.com/1mpHtWRIF2E2XabtcvI1E135aC8SfULCayrT5nob5NJLqCnK698eBOyj5-fEqB1FtcH_bem0TgAl4CQ=w1920-h974", 25, 30, "*", yellow))
+        .appendField(new Blockly.FieldClickImage("https://lh4.googleusercontent.com/mD4bxd1o01vMX_uu3kQDEDvYwmmTwSxm710WLB62EfWgh_JTAXQoLWwIUdpdZL6uhpIEfx1EZqZ1m64=w1920-h974", 25, 30, "*", green))
+        .appendField(new Blockly.FieldClickImage("https://lh5.googleusercontent.com/BA1yyKodWXzjVgMpDgxhxoTb7CDMs8x8pH3WLaXQQb95dCZZ7Vy7waMi9B2DW8xmqHMsoMiOiC2F1O0=w1920-h974", 25, 30, "*", red))
+		.appendField(new Blockly.FieldClickImage("https://conceptdraw.com/a2806c3/p2/preview/640/pict--rounded-rectangle-concept-maps-vector-stencils-library", 25, 30, "*", white));
+    this.appendValueInput("time")
+        .setCheck("Number")
+		.setAlign(Blockly.ALIGN_CENTRE)
+        .appendField("Time");
+	this.setPreviousStatement(true);
+    this.setNextStatement(true);
+    this.setColour(165);
+    this.setTooltip('');
+    this.setHelpUrl('http://www.example.com/');
+  }
+};
+
+  
+ Blockly.Blocks['piano'] = {
+  init: function() {
+	  this.appendDummyInput("robots")
+		.setAlign(Blockly.ALIGN_CENTRE)
+        .appendField(new Blockly.FieldDropdown([<?php
+$sql = "SELECT robot_name, robot_mac_address FROM robot WHERE classroom_id = '$classroom_id'";
+$result = mysql_query($sql, $conn)
+or die ('Problem with query' . mysql_error());
+while ($row = mysql_fetch_array($result)){ 
+
+$id=$row["robot_name"];
+$name=$row["robot_mac_address"];
+  echo "[\"$id\", \"$name\"],"; 
+}
+?>]), "robots");
+    this.appendDummyInput()    
+        .appendField(new Blockly.FieldClickImage("left piano.png", 15, 90, "1", a))
+        .appendField(new Blockly.FieldClickImage("middle piano.png", 13, 90, "2", b))
+        .appendField(new Blockly.FieldClickImage("right piano.png", 15, 90, "3", c))
+        .appendField(new Blockly.FieldClickImage("left piano.png", 15, 90, "4", d))
+        .appendField(new Blockly.FieldClickImage("middle piano.png", 13, 90, "5", e))
+        .appendField(new Blockly.FieldClickImage("middle piano.png", 13, 90, "6", f))
+        .appendField(new Blockly.FieldClickImage("right piano.png", 15, 90, "7", g));
+	this.setPreviousStatement(true, null);
+    this.setNextStatement(true, null);
+    this.setTooltip('');
+    this.setHelpUrl('http://www.example.com/');
+  }
+};
+		
+  Blockly.Blocks['custom_rttl'] = {
+  init: function() {
+	  this.appendDummyInput("robots")
+		.setAlign(Blockly.ALIGN_CENTRE)
+        .appendField(new Blockly.FieldDropdown([<?php
+$sql = "SELECT robot_name, robot_mac_address FROM robot WHERE classroom_id = '$classroom_id'";
+$result = mysql_query($sql, $conn)
+or die ('Problem with query' . mysql_error());
+while ($row = mysql_fetch_array($result)){ 
+
+$id=$row["robot_name"];
+$name=$row["robot_mac_address"];
+  echo "[\"$id\", \"$name\"],"; 
+}
+?>]), "robots");
+   this.appendValueInput("speed")
+        .setCheck("Number")
+        .appendField("Speed");
+    this.appendValueInput("volume")
+        .setCheck("Number")
+        .appendField("Volume");
+   this.appendDummyInput()
+       .appendField("Play RTTL")
+       .appendField(new Blockly.FieldTextInput("text"), "value_text");
+    this.setPreviousStatement(true, null);
+    this.setNextStatement(true, null);
+    this.setColour(225);
+    this.setTooltip('');
+    this.setHelpUrl('http://www.example.com/');
+  }
+};
+
+Blockly.JavaScript['custom_rttl'] = function(block) {
+	 var dropdown_robots = block.getFieldValue('robots');
+  var value_robots = Blockly.JavaScript.valueToCode(block, 'robots', Blockly.JavaScript.ORDER_ATOMIC);
+  var value_speed = Blockly.JavaScript.valueToCode(block, 'speed', Blockly.JavaScript.ORDER_ATOMIC);
+  var value_volume = Blockly.JavaScript.valueToCode(block, 'volume', Blockly.JavaScript.ORDER_ATOMIC);
+  var value_play = block.getFieldValue('value_text');
+  // TODO: Assemble JavaScript into code variable.
+  var code = 'publish("classroom/<?php echo $classroom_unique_code ?>/blockly/<?php echo $id ?>",\'{"robot":[{"robot_mac_address":\"'+dropdown_robots+'\","command":[{"RTTTL":{"RTTTL_type": 2, "RTTTL_speed":\' + '+value_speed+' + \',"RTTTL_vol":\' + '+value_volume+' + \',"RTTTL_music": \"'+value_play+'\"}}]}]}\');';
+ return code;
+};
+  
+  
+  
+  Blockly.Blocks['wait'] = {
+  init: function() {
+    this.appendValueInput("wait")
+        .setCheck(null)
+        .appendField("Wait");
+    this.setInputsInline(false);
+    this.setPreviousStatement(true, null)
+	this.setNextStatement(true, null);
+    this.setColour(195);
+    this.setTooltip('');
+    this.setHelpUrl('http://www.example.com/');
+  }
+};
+
+Blockly.JavaScript['wait'] = function(block) {
+  var value_wait = Blockly.JavaScript.valueToCode(block, 'wait', Blockly.JavaScript.ORDER_ATOMIC);
+  // TODO: Assemble JavaScript into code variable.
+  var code = 'publish("classroom/<?php echo $classroom_unique_code ?>/blockly/<?php echo $id ?>",\'{{"wait":{"wait_time":'+value_wait+'}}}\');';
+  return code;
+};
+  
+  
+  Blockly.Blocks['sensor_humidity'] = {
+  init: function() {
+	  this.appendDummyInput("robots")
+		.setAlign(Blockly.ALIGN_CENTRE)
+        .appendField(new Blockly.FieldDropdown([<?php
+$sql = "SELECT robot_name, robot_mac_address FROM robot WHERE classroom_id = '$classroom_id'";
+$result = mysql_query($sql, $conn)
+or die ('Problem with query' . mysql_error());
+while ($row = mysql_fetch_array($result)){ 
+
+$id=$row["robot_name"];
+$name=$row["robot_mac_address"];
+  echo "[\"$id\", \"$name\"],"; 
+}
+?>]), "robots");
+    this.appendDummyInput()
+        .appendField(new Blockly.FieldImage("http://www.robotshop.com/media/catalog/product/cache/7/image/800x800/9df78eab33525d08d6e5fb8d27136e95/e/l/electronic-brick-humidity-temperature-sensor.jpg", 70, 40, "*"))
+        .appendField("Humidity Sensor");
+    this.setInputsInline(false);
+    this.setOutput(true, null);
+    this.setColour(30);
+    this.setTooltip('');
+    this.setHelpUrl('http://www.example.com/');
+  }
+};
+
+Blockly.JavaScript['sensor_humidity'] = function(block) {
+  // TODO: Assemble JavaScript into code variable.
+  var dropdown_robots = block.getFieldValue('robots');
+  var value_robots = Blockly.JavaScript.valueToCode(block, 'robots', Blockly.JavaScript.ORDER_ATOMIC);
+  if (dropdown_robots == topic_splitted[4])
+  var code = 'read("sensor_humidity")';
+  // TODO: Change ORDER_NONE to the correct strength.
+  return [code, Blockly.JavaScript.ORDER_NONE];
+};
+
+Blockly.Blocks['sensor_temperature'] = {
+  init: function() {
+	  this.appendDummyInput("robots")
+		.setAlign(Blockly.ALIGN_CENTRE)
+        .appendField(new Blockly.FieldDropdown([<?php
+$sql = "SELECT robot_name, robot_mac_address FROM robot WHERE classroom_id = '$classroom_id'";
+$result = mysql_query($sql, $conn)
+or die ('Problem with query' . mysql_error());
+while ($row = mysql_fetch_array($result)){ 
+
+$id=$row["robot_name"];
+$name=$row["robot_mac_address"];
+  echo "[\"$id\", \"$name\"],"; 
+}
+?>]), "robots");
+    this.appendDummyInput()
+        .appendField(new Blockly.FieldImage("http://www.robotshop.com/media/catalog/product/cache/7/image/800x800/9df78eab33525d08d6e5fb8d27136e95/e/l/electronic-brick-humidity-temperature-sensor.jpg", 70, 40, "*"))
+        .appendField("Temperature Sensor");
+    this.setInputsInline(false);
+    this.setOutput(true, null);
+    this.setColour(15);
+    this.setTooltip('');
+    this.setHelpUrl('http://www.example.com/');
+  }
+};
+
+Blockly.JavaScript['sensor_temperature'] = function(block) {
+  // TODO: Assemble JavaScript into code variable.
+  var dropdown_robots = block.getFieldValue('robots');
+  var value_robots = Blockly.JavaScript.valueToCode(block, 'robots', Blockly.JavaScript.ORDER_ATOMIC);
+  if (dropdown_robots == topic_splitted[4])
+  var code = 'read("sensor_temp")';
+  // TODO: Change ORDER_NONE to the correct strength.
+  return [code, Blockly.JavaScript.ORDER_NONE];
+};
+  
+  
+  Blockly.Blocks['rttl'] = {
+  init: function() {
+    this.appendDummyInput()
+        .appendField(new Blockly.FieldImage("https://upload.wikimedia.org/wikipedia/commons/thumb/2/21/Speaker_Icon.svg/2000px-Speaker_Icon.svg.png", 100, 100, "*"));
+    this.appendDummyInput("robots")
+		.setAlign(Blockly.ALIGN_CENTRE)
+        .appendField(new Blockly.FieldDropdown([<?php
+$sql = "SELECT robot_name, robot_mac_address FROM robot WHERE classroom_id = '$classroom_id'";
+$result = mysql_query($sql, $conn)
+or die ('Problem with query' . mysql_error());
+while ($row = mysql_fetch_array($result)){ 
+
+$id=$row["robot_name"];
+$name=$row["robot_mac_address"];
+  echo "[\"$id\", \"$name\"],"; 
+}
+?>]), "robots");
+	this.appendValueInput("speed")
+        .setCheck("Number")
+        .appendField("Speed");
+    this.appendValueInput("volume")
+        .setCheck("Number")
+        .appendField("Volume");
+    this.appendValueInput("play")
+        .setCheck("Number")
+        .appendField("Play");
+    this.setInputsInline(false);
+    this.setPreviousStatement(true, null);
+    this.setNextStatement(true, null);
+    this.setColour(345);
+    this.setTooltip('');
+    this.setHelpUrl('http://www.example.com/');
+  }
+};
+
+Blockly.JavaScript['rttl'] = function(block) {
+  var value_speed = Blockly.JavaScript.valueToCode(block, 'speed', Blockly.JavaScript.ORDER_ATOMIC);
+  var value_volume = Blockly.JavaScript.valueToCode(block, 'volume', Blockly.JavaScript.ORDER_ATOMIC);
+  var value_play = Blockly.JavaScript.valueToCode(block, 'play', Blockly.JavaScript.ORDER_ATOMIC);
+  var dropdown_robots = block.getFieldValue('robots');
+  var value_robots = Blockly.JavaScript.valueToCode(block, 'robots', Blockly.JavaScript.ORDER_ATOMIC);
+  // TODO: Assemble JavaScript into code variable.
+  var code = 'publish("classroom/<?php echo $classroom_unique_code ?>/blockly/<?php echo $id ?>",\'{"robot":[{"robot_mac_address":"'+dropdown_robots+'","command":[{"RTTTL":{"RTTTL_type":1,"RTTTL_speed":'+value_speed+',"RTTTL_vol":'+value_volume+',"RTTTL_music_list":'+value_play+'}}]}]}\');';
+  return code;
+};
+
+	Blockly.Blocks['turn_off'] = {
+  init: function() {
+	  this.appendDummyInput("text")
+        .appendField("Turn Lights Off"); 
+	this.appendDummyInput("robots")
+		.setAlign(Blockly.ALIGN_CENTRE)
+        .appendField(new Blockly.FieldDropdown([<?php
+$sql = "SELECT robot_name, robot_mac_address FROM robot WHERE classroom_id = '$classroom_id'";
+$result = mysql_query($sql, $conn)
+or die ('Problem with query' . mysql_error());
+while ($row = mysql_fetch_array($result)){ 
+
+$id=$row["robot_name"];
+$name=$row["robot_mac_address"];
+  echo "[\"$id\", \"$name\"],"; 
+}
+?>]), "robots");
+	this.setPreviousStatement(true, null);
+    this.setNextStatement(true, null);
+    this.setColour(255);
+    this.setTooltip('');
+    this.setHelpUrl('http://www.example.com/');
+  }
+};
+
+Blockly.JavaScript['turn_off'] = function(block) {
+  //var value_position = Blockly.JavaScript.valueToCode(block, 'position', Blockly.JavaScript.ORDER_ATOMIC);
+  var dropdown_robots = block.getFieldValue('robots');
+  var value_robots = Blockly.JavaScript.valueToCode(block, 'robots', Blockly.JavaScript.ORDER_ATOMIC);
+  // TODO: Assemble JavaScript into code variable
+  var code = 'publish("classroom/<?php echo $classroom_unique_code ?>/blockly/<?php echo $id ?>",\'{"robot":[{"robot_mac_address":"'+dropdown_robots+'","command":[{"led_ring":{"led_type":3}}]}]}\');';
+  return code;
+};
+	
+    Blockly.Blocks['oled_print'] = {
+ init: function() {
+	 this.appendDummyInput("robots")
+		.setAlign(Blockly.ALIGN_CENTRE)
+        .appendField(new Blockly.FieldDropdown([<?php
+$sql = "SELECT robot_name, robot_mac_address FROM robot WHERE classroom_id = '$classroom_id'";
+$result = mysql_query($sql, $conn)
+or die ('Problem with query' . mysql_error());
+while ($row = mysql_fetch_array($result)){ 
+
+$id=$row["robot_name"];
+$name=$row["robot_mac_address"];
+  echo "[\"$id\", \"$name\"],"; 
+}
+?>]), "robots");
+   this.appendDummyInput()
+       .appendField("print:")
+       .appendField(new Blockly.FieldTextInput("text"), "value_text");
+   this.appendDummyInput()
+       .setAlign(Blockly.ALIGN_CENTRE)
+      .appendField(new Blockly.FieldImage("https://cdn.shopify.com/s/files/1/0264/7629/products/6254.png?v=1457420496", 60, 60, "*"));
+   this.appendValueInput("time")
+        .setCheck("Number")
+        .setAlign(Blockly.ALIGN_CENTRE)
+        .appendField("Time");
+   this.setPreviousStatement(true, null);
+   this.setNextStatement(true, null);
+   this.setTooltip('');
+   this.setHelpUrl('http://www.example.com/');
+ }
+};
+
+
+Blockly.JavaScript['oled_print'] = function(block) {
+ var text_value_text = block.getFieldValue('value_text').replace(/\'/g, "\\'");
+ var value_time = Blockly.JavaScript.valueToCode(block, 'time', Blockly.JavaScript.ORDER_ATOMIC);
+ // TODO: Assemble JavaScript into code variable.
+ var dropdown_robots = block.getFieldValue('robots');
+  var value_robots = Blockly.JavaScript.valueToCode(block, 'robots', Blockly.JavaScript.ORDER_ATOMIC);
+ var code = 'publish("classroom/<?php echo $classroom_unique_code ?>/blockly/<?php echo $id ?>",\'{"robot":[{"robot_mac_address":\"'+dropdown_robots+'\","command":[{"oled":{"oled_type": 1, "oled_curX":20,"oled_curY":20,"oled_time":'+value_time+',"oled_string": \"'+text_value_text+'\"}}]}]}\');';
+ return code;
+};
+    
+    
+    
+    Blockly.Blocks['distance_sensor'] = {
+ init: function() {
+	 this.appendDummyInput("robots")
+		.setAlign(Blockly.ALIGN_CENTRE)
+        .appendField(new Blockly.FieldDropdown([<?php
+$sql = "SELECT robot_name, robot_mac_address FROM robot WHERE classroom_id = '$classroom_id'";
+$result = mysql_query($sql, $conn)
+or die ('Problem with query' . mysql_error());
+while ($row = mysql_fetch_array($result)){ 
+
+$id=$row["robot_name"];
+$name=$row["robot_mac_address"];
+  echo "[\"$id\", \"$name\"],"; 
+}
+?>]), "robots");
+   this.appendDummyInput()
+       .setAlign(Blockly.ALIGN_CENTRE)
+       .appendField("Distance sensor value");
+   this.appendDummyInput()
+       .setAlign(Blockly.ALIGN_CENTRE)
+       .appendField(new Blockly.FieldImage("https://www.bananarobotics.com/shop/image/cache/data/sku/BR/0/1/0/0/2/BR010020-HC-SR04-Ultrasonic-Distance-Sensor-Module/HC-SR04-Ultrasonic-Distance-Sensor-Module-600x600.png", 60, 60, "*"));
+   this.setOutput(true, null);
+   this.setColour(90);
+   this.setTooltip('');
+   this.setHelpUrl('http://www.example.com/');
+ }
+};
+    
+    Blockly.JavaScript['distance_sensor'] = function(block) {
+ // TODO: Assemble JavaScript into code variable.
+ var dropdown_robots = block.getFieldValue('robots');
+  var value_robots = Blockly.JavaScript.valueToCode(block, 'robots', Blockly.JavaScript.ORDER_ATOMIC);
+  if (dropdown_robots == topic_splitted[4])
+ var code = 'read("sensor_sonic")';
+ // TODO: Change ORDER_NONE to the correct strength.
+ return [code, Blockly.JavaScript.ORDER_NONE];
+};
+    
+    Blockly.Blocks['red_sensor'] = {
+ 	init: function() {
+		this.appendDummyInput("robots")
+		.setAlign(Blockly.ALIGN_CENTRE)
+        .appendField(new Blockly.FieldDropdown([<?php
+$sql = "SELECT robot_name, robot_mac_address FROM robot WHERE classroom_id = '$classroom_id'";
+$result = mysql_query($sql, $conn)
+or die ('Problem with query' . mysql_error());
+while ($row = mysql_fetch_array($result)){ 
+
+$id=$row["robot_name"];
+$name=$row["robot_mac_address"];
+  echo "[\"$id\", \"$name\"],"; 
+}
+?>]), "robots");
+   	this.appendDummyInput()
+       .setAlign(Blockly.ALIGN_CENTRE)
+       .appendField(new Blockly.FieldImage("http://www-bcf.usc.edu/~trinagre/itp101/images/rgb.jpg", 30, 30, "*"))
+       .appendField("Red sensor value");
+   this.setOutput(true, null);
+   this.setColour(0);
+   this.setTooltip('');
+   this.setHelpUrl('http://www.example.com/');
+ }
+};  
+    Blockly.JavaScript['red_sensor'] = function(block) {
+ // TODO: Assemble JavaScript into code variable.
+ var dropdown_robots = block.getFieldValue('robots');
+  var value_robots = Blockly.JavaScript.valueToCode(block, 'robots', Blockly.JavaScript.ORDER_ATOMIC);
+  if (dropdown_robots == topic_splitted[4])
+	var code = 'read("sensor_RGB_red")';
+ // TODO: Change ORDER_NONE to the correct strength.
+ 	return [code, Blockly.JavaScript.ORDER_NONE];
+};
+    
+    Blockly.Blocks['green_sensor'] = {
+ 	init: function() {
+		this.appendDummyInput("robots")
+		.setAlign(Blockly.ALIGN_CENTRE)
+        .appendField(new Blockly.FieldDropdown([<?php
+$sql = "SELECT robot_name, robot_mac_address FROM robot WHERE classroom_id = '$classroom_id'";
+$result = mysql_query($sql, $conn)
+or die ('Problem with query' . mysql_error());
+while ($row = mysql_fetch_array($result)){ 
+
+$id=$row["robot_name"];
+$name=$row["robot_mac_address"];
+  echo "[\"$id\", \"$name\"],"; 
+}
+?>]), "robots");
+   	this.appendDummyInput()
+       .setAlign(Blockly.ALIGN_CENTRE)
+       .appendField(new Blockly.FieldImage("http://www-bcf.usc.edu/~trinagre/itp101/images/rgb.jpg", 30, 30, "*"))
+       .appendField("Green sensor value");
+   this.setOutput(true, null);
+   this.setColour(120);
+   this.setTooltip('');
+   this.setHelpUrl('http://www.example.com/');
+ }
+};  
+    Blockly.JavaScript['green_sensor'] = function(block) {
+ // TODO: Assemble JavaScript into code variable.
+ var dropdown_robots = block.getFieldValue('robots');
+  var value_robots = Blockly.JavaScript.valueToCode(block, 'robots', Blockly.JavaScript.ORDER_ATOMIC);
+  if (dropdown_robots == topic_splitted[4])
+	var code = 'read("sensor_RGB_green")';
+ // TODO: Change ORDER_NONE to the correct strength.
+ 	return [code, Blockly.JavaScript.ORDER_NONE];
+};
+    
+    Blockly.Blocks['blue_sensor'] = {
+ 	init: function() {
+		this.appendDummyInput("robots")
+		.setAlign(Blockly.ALIGN_CENTRE)
+        .appendField(new Blockly.FieldDropdown([
+		<?php
+$sql = "SELECT robot_name, robot_mac_address FROM robot WHERE classroom_id = '$classroom_id'";
+$result = mysql_query($sql, $conn)
+or die ('Problem with query' . mysql_error());
+while ($row = mysql_fetch_array($result)){ 
+
+$id=$row["robot_name"];
+$name=$row["robot_mac_address"];
+  echo "[\"$id\", \"$name\"],"; 
+}
+?>]), "robots");
+   	this.appendDummyInput()
+       .setAlign(Blockly.ALIGN_CENTRE)
+       .appendField(new Blockly.FieldImage("http://www-bcf.usc.edu/~trinagre/itp101/images/rgb.jpg", 30, 30, "*"))
+       .appendField("Blue sensor value");
+   this.setOutput(true, null);
+   this.setColour(210);
+   this.setTooltip('');
+   this.setHelpUrl('http://www.example.com/');
+ }
+};  
+    Blockly.JavaScript['blue_sensor'] = function(block) {
+ // TODO: Assemble JavaScript into code variable
+ var dropdown_robots = block.getFieldValue('robots');
+  var value_robots = Blockly.JavaScript.valueToCode(block, 'robots', Blockly.JavaScript.ORDER_ATOMIC);
+  if (dropdown_robots == topic_splitted[4])
+	var code = 'read("sensor_RGB_blue")';
+ // TODO: Change ORDER_NONE to the correct strength.
+ 	return [code, Blockly.JavaScript.ORDER_NONE];
+};
+     
+    
+  Blockly.Blocks['js_script'] = {
+  init: function() {
+    this.appendDummyInput()
+        .appendField("JS script")
+        .appendField(new Blockly.FieldTextInput("default"), "text");
+	this.setPreviousStatement(true, null);
+    this.setNextStatement(true, null);
+    this.setColour(120);
+    this.setTooltip('');
+    this.setHelpUrl('http://www.example.com/');
+  }
+};
+
+Blockly.JavaScript['js_script'] = function(block) {
+  var text_text = block.getFieldValue('text');
+  // TODO: Assemble JavaScript into code variable.
+  var code = text_text;
+  return code;
+};
+
+
+
+
+
+Blockly.Blocks['test_led'] = {
+  init: function() {
+    this.appendDummyInput()
+        .appendField("LED")
+        .appendField(new Blockly.FieldDropdown([["On", "1"], ["Off", "0"], ["", ""]]), "led_dropdown");
+    this.setInputsInline(false);
+    this.setPreviousStatement(true, null);
+    this.setNextStatement(true, null);
+    this.setTooltip('');
+    this.setHelpUrl('http://www.example.com/');
+  }
+};
+
+Blockly.JavaScript['test_led'] = function(block) {
+  var dropdown_led_dropdown = block.getFieldValue('led_dropdown');
+  // TODO: Assemble JavaScript into code variable.
+  var code = "publish(\"onoff\"," + dropdown_led_dropdown + ");";
+  return code;
+};
+
+
+
+
+
+Blockly.Blocks['servo1'] = {
+  init: function() {
+    this.appendDummyInput()
+        .setAlign(Blockly.ALIGN_CENTRE)
+        .appendField("Servo pin")
+        .appendField(new Blockly.FieldDropdown([["D1", "1"], ["D2", "2"], ["D3", "3"]]), "servo1_pin");
+    this.appendDummyInput()
+        .setAlign(Blockly.ALIGN_CENTRE)
+        .appendField(new Blockly.FieldImage("https://twinschip.com/image/cache/data/%20Developer%20Boards/Shield/Motor%20Drive/Motors/SERVO-SG90-261-550x650.png", 100, 100, "*"));
+    this.appendValueInput("angle")
+        .setCheck(null)
+        .setAlign(Blockly.ALIGN_RIGHT)
+        .appendField("Angle (0 - 180)");
+    this.setPreviousStatement(true, null);
+    this.setNextStatement(true, null);
+    this.setColour(230);
+    this.setTooltip('');
+    this.setHelpUrl('http://www.example.com/');
+  }
+};
+
+Blockly.JavaScript['servo1'] = function(block) {
+  var dropdown_servo1_pin = block.getFieldValue('servo1_pin');
+  var value_angle = Blockly.JavaScript.valueToCode(block, 'angle', Blockly.JavaScript.ORDER_ATOMIC);
+  // TODO: Assemble JavaScript into code variable.
+  var code = "publish(\"servo1\"," + value_angle + ");";
+  return code;
+};
+
+
+
+
+
+//https://blockly-demo.appspot.com/static/demos/blockfactory/index.html#kug6gc
+Blockly.Blocks['istrue'] = {
+  init: function() {
+    this.appendDummyInput()
+        .appendField(new Blockly.FieldDropdown([["LED 1", "onoff"], ["Servo 1", "servo1"], ["Limit Switch 2", "limitswitch1"]]), "feed_name");
+    this.appendValueInput("feed_value")
+        .setCheck(null)
+        .setAlign(Blockly.ALIGN_RIGHT)
+        .appendField("=");
+    this.setInputsInline(true);
+    this.setOutput(true, null);
+    this.setColour(120);
+    this.setTooltip('');
+    this.setHelpUrl('http://www.example.com/');
+  }
+};
+
+Blockly.JavaScript['istrue'] = function(block) {
+  var dropdown_feed_name = block.getFieldValue('feed_name');
+  var value_feed_value = Blockly.JavaScript.valueToCode(block, 'feed_value', Blockly.JavaScript.ORDER_ATOMIC);
+  // TODO: Assemble JavaScript into code variable.
+  var code = "istrue(\"" + dropdown_feed_name + "\",\"" + value_feed_value + "\")";
+  // TODO: Change ORDER_NONE to the correct strength.
+  return [code, Blockly.JavaScript.ORDER_NONE];
+};
+
+
+
+
+Blockly.Blocks['move_forward'] = {
+  init: function() {
+    this.appendValueInput("distance")
+        .setCheck("Number")
+        .setAlign(Blockly.ALIGN_RIGHT)
+        .appendField("Move Forward");
+    this.setInputsInline(false);
+	this.setPreviousStatement(true, null);
+    this.setNextStatement(true, null);
+    this.setColour(120);
+    this.setTooltip('');
+    this.setHelpUrl('http://www.example.com/');
+  }
+};
+
+Blockly.JavaScript['move_forward'] = function(block) {
+  var value_distance = Blockly.JavaScript.valueToCode(block, 'distance', Blockly.JavaScript.ORDER_ATOMIC);
+  // TODO: Assemble JavaScript into code variable.
+  var code = "publish(\"move_forward\"," + value_distance + ");";
+  return code;
+};
+
+
+
+Blockly.Blocks['move_backward'] = {
+  init: function() {
+    this.appendValueInput("distance")
+        .setCheck("Number")
+        .setAlign(Blockly.ALIGN_RIGHT)
+        .appendField("Move Backward");
+    this.setInputsInline(false);
+	this.setPreviousStatement(true, null);
+    this.setNextStatement(true, null);
+    this.setColour(120);
+    this.setTooltip('');
+    this.setHelpUrl('http://www.example.com/');
+  }
+};
+
+Blockly.JavaScript['move_backward'] = function(block) {
+  var value_distance = Blockly.JavaScript.valueToCode(block, 'distance', Blockly.JavaScript.ORDER_ATOMIC);
+  // TODO: Assemble JavaScript into code variable.
+  var code = "publish(\"move_backward\"," + value_distance + ");";
+  return code;
+};
+
+
+
+Blockly.Blocks['turn_left'] = {
+  init: function() {
+    this.appendValueInput("angle")
+        .setCheck("Number")
+        .setAlign(Blockly.ALIGN_RIGHT)
+        .appendField("Turn Left");
+    this.setInputsInline(false);
+	this.setPreviousStatement(true, null);
+    this.setNextStatement(true, null);
+    this.setColour(120);
+    this.setTooltip('');
+    this.setHelpUrl('http://www.example.com/');
+  }
+};
+
+Blockly.JavaScript['turn_left'] = function(block) {
+  var value_angle = Blockly.JavaScript.valueToCode(block, 'angle', Blockly.JavaScript.ORDER_ATOMIC);
+  // TODO: Assemble JavaScript into code variable.
+  var code = "publish(\"turn_left\"," + value_angle + ");";
+  return code;
+};
+
+
+Blockly.Blocks['turn_right'] = {
+  init: function() {
+    this.appendValueInput("angle")
+        .setCheck("Number")
+        .setAlign(Blockly.ALIGN_RIGHT)
+        .appendField("Turn Right");
+    this.setInputsInline(false);
+	this.setPreviousStatement(true, null);
+    this.setNextStatement(true, null);
+    this.setColour(120);
+    this.setTooltip('');
+    this.setHelpUrl('http://www.example.com/');
+  }
+};
+
+Blockly.JavaScript['turn_right'] = function(block) {
+  var value_angle = Blockly.JavaScript.valueToCode(block, 'angle', Blockly.JavaScript.ORDER_ATOMIC);
+  // TODO: Assemble JavaScript into code variable.
+  var code = "publish(\"turn_right\"," + value_angle + ");";
+  return code;
+};
+
+
+
+Blockly.Blocks['motor_0_position'] = {
+  init: function() {
+    this.appendDummyInput()
+        .setAlign(Blockly.ALIGN_CENTRE)
+        .appendField("Motor Left");
+    this.setOutput(true, null);
+    this.setTooltip('');
+    this.setHelpUrl('http://www.example.com/');
+  }
+};
+
+Blockly.JavaScript['motor_0_position'] = function(block) {
+  // TODO: Assemble JavaScript into code variable.
+  var code = 'read("motor_0_position")';
+  // TODO: Change ORDER_NONE to the correct strength.
+  return [code, Blockly.JavaScript.ORDER_NONE];
+};
+
+
+Blockly.Blocks['robot_led'] = {
+  init: function() {
+    this.appendDummyInput("robots")
+		.setAlign(Blockly.ALIGN_CENTRE)
+        .appendField(new Blockly.FieldDropdown([<?php
+$sql = "SELECT robot_name, robot_mac_address FROM robot WHERE classroom_id = '$classroom_id'";
+$result = mysql_query($sql, $conn)
+or die ('Problem with query' . mysql_error());
+while ($row = mysql_fetch_array($result)){ 
+
+$id=$row["robot_name"];
+$name=$row["robot_mac_address"];
+  echo "[\"$id\", \"$name\"],"; 
+}
+?>]), "robots");
+    this.appendValueInput("led_number")
+        .setAlign(Blockly.ALIGN_CENTRE)
+		.setCheck("Number")
+        .appendField("LED Number");
+    this.appendValueInput("r")
+        .setCheck("Number")
+        .appendField("R");
+    this.appendValueInput("g")
+        .setCheck("Number")
+        .appendField("G");
+    this.appendValueInput("b")
+        .setCheck("Number")
+        .appendField("B");
+	this.appendValueInput("time")
+        .setCheck("Number")
+        .appendField("Time");
+    this.setPreviousStatement(true, null);
+    this.setNextStatement(true, null);
+    this.setColour(290);
+    this.setTooltip('');
+    this.setHelpUrl('http://www.example.com/');
+  }
+};
+
+
+Blockly.JavaScript['robot_led'] = function(block) {
+  var dropdown_robots = block.getFieldValue('robots');
+  var value_robots = Blockly.JavaScript.valueToCode(block, 'robots', Blockly.JavaScript.ORDER_ATOMIC);
+  var value_led_number = Blockly.JavaScript.valueToCode(block, 'led_number', Blockly.JavaScript.ORDER_ATOMIC);
+  var value_r = Blockly.JavaScript.valueToCode(block, 'r', Blockly.JavaScript.ORDER_ATOMIC);
+  var value_g = Blockly.JavaScript.valueToCode(block, 'g', Blockly.JavaScript.ORDER_ATOMIC);
+  var value_b = Blockly.JavaScript.valueToCode(block, 'b', Blockly.JavaScript.ORDER_ATOMIC);
+  var value_time = Blockly.JavaScript.valueToCode(block, 'time', Blockly.JavaScript.ORDER_ATOMIC);
+  // TODO: Assemble JavaScript into code variable.
+ 
+
+	  var code = 'publish("classroom/<?php echo $classroom_unique_code ?>/blockly/<?php echo $id ?>",\'{"robot":[{"robot_mac_address":"' + dropdown_robots + '","command":[{"led_ring":{"led_type": 1, "led_position": \' + ' + value_led_number + ' + \' ,"led_red":\' + ' + value_r + ' + \',"led_green":\' + ' + value_g + ' + \',"led_blue":\' + ' + value_b + ' + \',"led_time":\' + ' + value_time + '\ + \'}}]}]}\');';
+		return code;
+};
+
+
+ Blockly.Blocks['robot_led1'] = {
+  init: function() {
+    this.appendDummyInput("robots")
+		.setAlign(Blockly.ALIGN_CENTRE)
+        .appendField(new Blockly.FieldDropdown([<?php
+$sql = "SELECT robot_name, robot_mac_address FROM robot WHERE classroom_id = '$classroom_id'";
+$result = mysql_query($sql, $conn)
+or die ('Problem with query' . mysql_error());
+while ($row = mysql_fetch_array($result)){ 
+
+$id=$row["robot_name"];
+$name=$row["robot_mac_address"];
+  echo "[\"$id\", \"$name\"],"; 
+}
+?>]), "robots");
+    this.appendValueInput("r")
+        .setCheck("Number")
+        .appendField("R");
+    this.appendValueInput("g")
+        .setCheck("Number")
+        .appendField("G");
+    this.appendValueInput("b")
+        .setCheck("Number")
+        .appendField("B");
+		this.appendValueInput("time")
+        .setCheck("Number")
+        .appendField("Time");
+    this.setPreviousStatement(true, null);
+    this.setNextStatement(true, null);
+    this.setColour(290);
+    this.setTooltip('');
+    this.setHelpUrl('http://www.example.com/');
+  }
+};
+
+
+Blockly.JavaScript['robot_led1'] = function(block) {
+  var dropdown_robots = block.getFieldValue('robots');
+  var value_robots = Blockly.JavaScript.valueToCode(block, 'robots', Blockly.JavaScript.ORDER_ATOMIC);
+  var value_r = Blockly.JavaScript.valueToCode(block, 'r', Blockly.JavaScript.ORDER_ATOMIC);
+  var value_g = Blockly.JavaScript.valueToCode(block, 'g', Blockly.JavaScript.ORDER_ATOMIC);
+  var value_b = Blockly.JavaScript.valueToCode(block, 'b', Blockly.JavaScript.ORDER_ATOMIC);
+  var value_time = Blockly.JavaScript.valueToCode(block, 'time', Blockly.JavaScript.ORDER_ATOMIC);
+  // TODO: Assemble JavaScript into code variable.
+ 
+
+	  var code = 'publish("classroom/<?php echo $classroom_unique_code ?>/blockly/<?php echo $id ?>",\'{"robot":[{"robot_mac_address":"' + dropdown_robots + '","command":[{"led_ring":{"led_type": 2, "led_red":\' + ' + value_r + ' + \',"led_green":\' + ' + value_g + ' + \',"led_blue":\' + ' + value_b + ' + \',"led_time":\' + ' + value_time + '\ + \'}}]}]}\');';
+		return code;
+	 
+	 
+ 
+  
+}; 
+
+Blockly.Blocks['robot_led2'] = {
+  init: function() {
+    this.appendDummyInput("robots")
+		.setAlign(Blockly.ALIGN_CENTRE)
+        .appendField(new Blockly.FieldDropdown([<?php
+$sql = "SELECT robot_name, robot_mac_address FROM robot WHERE classroom_id = '$classroom_id'";
+$result = mysql_query($sql, $conn)
+or die ('Problem with query' . mysql_error());
+while ($row = mysql_fetch_array($result)){ 
+
+$id=$row["robot_name"];
+$name=$row["robot_mac_address"];
+  echo "[\"$id\", \"$name\"],"; 
+}
+?>]), "robots");
+    this.appendValueInput("led_number")
+        .setAlign(Blockly.ALIGN_CENTRE)
+		.setCheck("Array")
+        .appendField("LED ARRAY");
+    this.appendValueInput("r")
+        .setCheck("Number")
+        .appendField("R");
+    this.appendValueInput("g")
+        .setCheck("Number")
+        .appendField("G");
+    this.appendValueInput("b")
+        .setCheck("Number")
+        .appendField("B");
+	this.appendValueInput("time")
+        .setCheck("Number")
+        .appendField("Time");
+    this.setPreviousStatement(true, null);
+    this.setNextStatement(true, null);
+    this.setColour(290);
+    this.setTooltip('');
+	this.setInputsInline(true);
+    this.setHelpUrl('http://www.example.com/');
+  }
+};
+
+
+Blockly.JavaScript['robot_led2'] = function(block) {
+  var dropdown_robots = block.getFieldValue('robots');
+  var value_robots = Blockly.JavaScript.valueToCode(block, 'robots', Blockly.JavaScript.ORDER_ATOMIC);
+  var value_led_number = Blockly.JavaScript.valueToCode(block, 'led_number', Blockly.JavaScript.ORDER_ATOMIC);
+  var value_r = Blockly.JavaScript.valueToCode(block, 'r', Blockly.JavaScript.ORDER_ATOMIC);
+  var value_g = Blockly.JavaScript.valueToCode(block, 'g', Blockly.JavaScript.ORDER_ATOMIC);
+  var value_b = Blockly.JavaScript.valueToCode(block, 'b', Blockly.JavaScript.ORDER_ATOMIC);
+  var value_time = Blockly.JavaScript.valueToCode(block, 'time', Blockly.JavaScript.ORDER_ATOMIC);
+  // TODO: Assemble JavaScript into code variable.
+ 
+
+	  var code = 'publish("classroom/<?php echo $classroom_unique_code ?>/blockly/<?php echo $id ?>",\'{"robot":[{"robot_mac_address":"' + dropdown_robots + '","command":[{"led_ring":{"led_type": 4, "led_position": ' + value_led_number + ' ,"led_red":\' + ' + value_r + ' + \',"led_green":\' + ' + value_g + ' + \',"led_blue":\' + ' + value_b + ' + \',"led_time":\' + ' + value_time + '\ + \'}}]}]}\');';
+		return code;
+};
+
+
+
+  //___________________________________VARIABLES_____________________________________
+
+	
+  var myInterpreter = null;
+  var data = {"sensor_RGB_red":0,"sensor_RGB_green":0,"sensor_RGB_blue":0};
+  var distance_data = {"sensor_sonic": 0};
+  var humidity_temp_data = {"sensor_humidity": 0, "sensor_temp":0};
+
+  //__________________________________API____________________________________________
+
+	function initApi(interpreter, scope) {
+		// Add an API function for the alert() block.
+		var wrapper = function (text) {
+			text = text ? text.toString() : '';
+			return interpreter.createPrimitive(alert(text));
+		};
+		interpreter.setProperty(scope, 'alert',
+			interpreter.createNativeFunction(wrapper));
+
+		// Add an API function for the prompt() block.
+		var wrapper = function (text) {
+			text = text ? text.toString() : '';
+			return interpreter.createPrimitive(prompt(text));
+		};
+		interpreter.setProperty(scope, 'prompt',
+			interpreter.createNativeFunction(wrapper));
+
+		// Add an API function for highlighting blocks.
+		var wrapper = function (id) {
+			id = id ? id.toString() : '';
+			return interpreter.createPrimitive(highlightBlock(id));
+		};
+		interpreter.setProperty(scope, 'highlightBlock',
+			interpreter.createNativeFunction(wrapper));
+
+		// CUSTOM API publish.
+		var wrapper = function (feed, value) {
+			feed = feed ? feed.toString() : '';
+			value = value ? value.toString() : '';
+			return interpreter.createPrimitive(publish(feed, value));
+		};
+		interpreter.setProperty(scope, 'publish',
+			interpreter.createNativeFunction(wrapper));
+
+			
+		// CUSTOM API store.
+		var wrapper = function (feed) {
+			feed = feed ? feed.toString() : '';
+			return interpreter.createPrimitive(read(feed));
+		};
+		interpreter.setProperty(scope, 'read',
+			interpreter.createNativeFunction(wrapper));
+		
+		
+
+}
+
+
+
+
+
+	var highlightPause = false;
+
+	function highlightBlock(id) {
+		Code.workspace.highlightBlock(id);
+		highlightPause = true;
+	}
+
+	function nextStep() {
+	
+		if (myInterpreter.step()) {
+			window.setTimeout(nextStep, 1);
+		}
+	}
+
+	function parseCode() {
+		// Generate JavaScript code and parse it.
+		Blockly.JavaScript.STATEMENT_PREFIX = 'highlightBlock(%1);\n';
+		Blockly.JavaScript.addReservedWords('highlightBlock');
+		var code = Blockly.JavaScript.workspaceToCode(Code.workspace);
+		myInterpreter = new Interpreter(code, initApi);
+		//alert('Ready to execute this code:\n\n' + code);
+		document.getElementById('stepButton').disabled = '';
+		highlightPause = false;
+		Code.workspace.traceOn(true);
+		Code.workspace.highlightBlock(null);
+	}
+
+	function stepCode() {
+		try {
+			var ok = myInterpreter.step();
+		}
+		finally {
+			if (!ok) {
+				// Program complete, no more code to execute.
+				document.getElementById('stepButton').disabled = 'disabled';
+				return;
+			}
+		}
+		if (highlightPause) {
+			// A block has been highlighted.  Pause execution here.
+			highlightPause = false;
+
+		} else {
+			// Keep executing until a highlight statement is reached.
+			stepCode();
+		}
+	}
+	
+
+	// __________________________________________PAHO___________________________________
+	// Create a client instance: Broker, Port, Websocket Path, Client ID
+	client = new Paho.MQTT.Client("139.162.44.18", Number(9003), "<?php echo(rand(10,100)); ?>");
+	
+	// set callback handlers
+	client.onConnectionLost = function (responseObject) {
+		console.log("Connection Lost: " + responseObject.errorMessage);
+	}
+
+	client.onMessageArrived = function (message) {
+		topic_splitted	= message.destinationName.split("/");
+		console.log("Message Topic: " + message.destinationName);
+		console.log("Message Arrived: " + message.payloadString);
+		if (message.destinationName == "in_progress"){
+			if (message.payloadString == "false") {
+				stepCode();
+			}
+		}
+		
+		
+		
+		var new_data = JSON.parse(message.payloadString);
+		$.extend(true, data, data, new_data);
+		
+		var new_distance_data = JSON.parse(message.payloadString);
+		$.extend(true, distance_data, distance_data, new_distance_data);
+		
+		var new_humidity_temp_data = JSON.parse(message.payloadString);
+		$.extend(true, humidity_temp_data, humidity_temp_data, new_humidity_temp_data);
+		
+		
+		
+    /* if (message.destinationName == "martin/blockly/json_data"){
+      json_data(message.destinationName,message.payloadString);
+    }
+    else{
+      store(message.destinationName,message.payloadString);
+    }
+	 */
+	}
+
+	// Called when the connection is made
+	function onConnect() {
+		console.log("Connected!");
+		client.subscribe("to/classroom/<?php echo $classroom_unique_code ?>/robot/#");
+	}
+
+	// Connect the client, providing an onConnect callback
+	client.connect({
+		onSuccess : onConnect,
+		//useSSL: true,
+		//userName : "",
+		//password : ""
+	});
+
+	// __________________________________________Custom Function___________________________________
+	function publish(feed, value) {
+		var message = new Paho.MQTT.Message(value);
+		message.destinationName = feed;
+		message.qos = 0;
+		client.send(message);
+	}
+	
+	function store(feed, value) {
+    var new_json = '{"' + feed + '": ' + value + '}';
+    var new_data = JSON.parse(new_json);
+    $.extend(true, data, data, new_data);
+	}
+
+  function json_data(feed,value){
+    var new_data = JSON.parse(value);
+    $.extend(true, data, data, new_data);
+  }
+
+  function read(feed){
+    for (i=0; i < Object.keys(data).length; i++){
+      var x = Object.keys(data)[i];
+      if (x == feed){
+        var y = Object.values(data)[i];
+        return y;
+      }
+    }
+  }
+  
+  function read_distance(feed){
+	  for (i = 0; i < Object.keys(distance_data).length; i++){
+		  var z = Object.keys(distance_data)[i];
+		  if(z == feed){
+			  var v = Object.values(distance_data)[i];
+			  return v;
+		  }
+	  }
+  }
+  
+  function read_humidity_temp(feed){
+	  for (i = 0; i < Object.keys(humidity_temp_data).length; i++){
+		  var z = Object.keys(humidity_temp_data)[i];
+		  if(z == feed){
+			  var v = Object.values(humidity_temp_data)[i];
+			  return v;
+		  }
+	  }
+  }
+
+  function export_1(){
+	 
+    var xml = Blockly.Xml.workspaceToDom(Code.workspace);
+    xml_text = Blockly.Xml.domToText(xml);
+	
+      
+	
+    // THIS IS NEW: requests server to save xml_text
+	$.ajax( // jQuery function to make AJAX call
+	{
+		url: "export.php?xml="+encodeURIComponent(xml_text), // url to call
+		async: true, // we want to block other user activities while we finish it. Otherwise, se to true.
+		method: "POST", // have to be post because of length limitations of get method
+		success:function(result) // executes when server responds
+		{
+			if(result != "failed")
+			{
+				alert("Your data was saved");
+			}
+			else
+			{
+				alert("There was an error saving your data.");
+			}
+		}
+	});
+	 
+  }
+  
+  function import_1(){
+    // THIS IS NEW: requests xml_text from server
+	
+	$.ajax(
+	{
+		url: "import.php",
+		async: true,
+		method: "POST",
+		success:function(result)
+		{
+			if(result != "failed")
+			{
+				// converts result to Xml
+			    var xml = Blockly.Xml.textToDom(result);
+			    Blockly.Xml.domToWorkspace(xml, Code.workspace);
+				alert('Blockly imported!');
+			}
+			else
+			{
+				alert("There was an error retrieving your data.");
+			}
+		}
+	});
+	 
+  }
+  
+  function exit(){
+	  Blockly.mainWorkspace.clear();
+  }
+  
+  function exit2(){
+	  if (window.confirm("Have you saved your blockly?"))
+	  {
+		  Blockly.mainWorkspace.clear();
+		  window.location.href = "project.php";
+	  }
+	  else{
+		  alert("Please always save data!");
+	  }
+  }
+  
+  function exit3(){
+	  if (window.confirm("Have you saved your blockly?"))
+	  {
+		  Blockly.mainWorkspace.clear();
+		  window.location.href = "classroom.php";
+	  }
+	  else{
+		  alert("Please always save data!");
+	  }
+  }
+  
+  function exit4(){
+	  if (window.confirm("Have you saved your blockly?"))
+	  {
+		  Blockly.mainWorkspace.clear();
+		  window.location.href = "robots.php";
+	  }
+	  else{
+		  alert("Please always save data!");
+	  }
+  }
+  
+  function exit5(){
+	  if (window.confirm("Have you saved your blockly?"))
+	  {
+		  Blockly.mainWorkspace.clear();
+		  window.location.href = "account.php";
+	  }
+	  else{
+		  alert("Please always save data!");
+	  }
+  }
+  
+  function exit6(){
+	  if (window.confirm("Have you saved your blockly?"))
+	  {
+		  Blockly.mainWorkspace.clear();
+		  window.location.href = "blockly.php";
+	  }
+	  else{
+		  alert("Please always save data!");
+	  }
+  }
+
+	</script>
+	
+	    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.11.0/jquery-ui.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/3.5.0/lodash.min.js"></script>
+    <script src="gridstack.js"></script>
+    <script src="gridstack.jQueryUI.js"></script>
+	
+    <div class="container-fluid">
+        <div class="grid-stack">
+		
+		
+            <div class="grid-stack-item" data-gs-x="0" data-gs-y="0" data-gs-width="3" data-gs-height="2">
+                <div class="grid-stack-item-content">
+                 
+<div id = "chart">
+<canvas id="canvas"></canvas>
+</div>
+<script src = "https://cdnjs.cloudflare.com/ajax/libs/Chart.js/1.0.2/Chart.min.js"></script>
+<script>
+
+var dData = function() {
+  return (read("sensor_RGB_red"));
+};
+
+var dData1 = function() {
+  return (read("sensor_RGB_green"));
+};
+
+var dData2 = function() {
+  return (read("sensor_RGB_blue"));
+};
+
+var lineChartData = {
+
+  labels: ["", "", "", "", "", "", "", "", "", ""],
+  datasets: [{
+    fillColor: "rgba(220,220,220,0)",
+        strokeColor: "rgba(225,0,0,1)",
+        pointColor: "rgba(225,0,0,1)",
+    data: [dData(), dData(), dData(), dData(), dData(), dData(), dData(), dData(), dData(), dData()]
+  },{
+    fillColor: "rgba(0,120,220,0)",
+        strokeColor: "rgba(0,180,0,1)",
+        pointColor: "rgba(00,180,0,1)",
+    data: [dData1(), dData1(), dData1(), dData1(), dData1(), dData1(), dData1(), dData1(), dData1(), dData1()]
+  },
+  {
+    fillColor: "rgba(0,20,255,0)",
+        strokeColor: "rgba(0,0,255,1)",
+        pointColor: "rgba(0,0,255,1)",
+    data: [dData(), dData2(), dData2(), dData2(), dData2(), dData2(), dData2(), dData2(), dData2(), dData2()]
+  },
+  
+  
+  ]
+}
+
+Chart.defaults.global.animationSteps = 20;
+Chart.defaults.global.animationEasing = "easeOutBounce";
+Chart.defaults.global.responsive = true;
+Chart.defaults.global.scaleLineColor = "white";
+Chart.defaults.global.scaleFontSize = 12;
+Chart.defaults.global.scaleFontColor = "white";
+Chart.defaults.global.showTooltips = false;
+
+var index = 11;
+var ctx = document.getElementById("canvas").getContext("2d");
+ctx.canvas.width  = window.innerWidth;
+  ctx.canvas.height = window.innerHeight;
+var lineChartDemo = new Chart(ctx).Line(lineChartData, {
+
+  responsive: true,
+  pointDotRadius: 0,
+    bezierCurve: true,
+    scaleShowVerticalLines: false,
+    scaleGridLineColor: "white",
+	scaleOverride: true, 
+	scaleStartValue: 0, 
+	scaleStepWidth: 51, 
+	scaleSteps: 5
+});
+
+setInterval(function() {
+  lineChartDemo.removeData();
+  lineChartDemo.addData([dData(), dData1(), dData2()], " ");
+  index++;
+}, 1000);
+</script>
+                
+        </div>
+    </div>
+	
+	
+	<div class="grid-stack-item" data-gs-x="3" data-gs-y="0" data-gs-width="5" data-gs-height="2">
+                <div class="grid-stack-item-content">
+				<div id = "g1"></div>
+				<div id = "g2"></div>
+				<div id = "g3"></div>
+
+    <script src="raphael-2.1.4.min.js"></script>
+    <script src="justgage.js"></script>
+    <script>
+     /*  var g1;
+      var g2;
+	  var g3; */
+
+     function rgb(){
+	 
+	 var g1 = new JustGage({
+          id: "g1",
+          value: read("sensor_RGB_red"),
+          min: 0,
+          max: 255,
+          title: "Red Sensor",
+		  titleFontColor: "white",
+		  valueFontColor: "white",
+		  customSectors: [{
+			color : "#e04e41",
+			lo : 0,
+			hi : 124
+		  },{
+			color : "#7a1007",
+			lo : 125,
+			hi : 255
+		  }]
+        });
+	  
+
+        var g2 = new JustGage({
+          id: "g2",
+          value: (read("sensor_RGB_green")),
+          min: 0,
+          max: 255,
+          title: "Green Sensor",
+		  titleFontColor: "white",
+		  valueFontColor: "white",
+		  customSectors: [{
+			color : "#62ce5a",
+			lo : 0,
+			hi : 124
+		  },{
+			color : "#0b5e05",
+			lo : 124,
+			hi : 255
+		  }]
+        });
+		
+		var g3 = new JustGage({
+          id: "g3",
+          value: (read("sensor_RGB_blue")),
+          min: 0,
+          max: 255,
+          title: "Blue Sensor",
+		  titleFontColor: "white",
+		  valueFontColor: "white",
+		  customSectors: [{
+			color : "#324fd1",
+			lo : 0,
+			hi : 124
+		  },{
+			color : "#06186b",
+			lo : 125,
+			hi : 255
+		  }]
+        });
+		
+        setInterval(function() {
+          g1.refresh(read("sensor_RGB_red"));
+		  g2.refresh(read("sensor_RGB_green"));
+		  g3.refresh(read("sensor_RGB_blue"));
+        }, 1000);
+      };
+	  
+    </script>
+				
+								
+				
+				</div>
+	</div>
+	
+	 <div class="grid-stack-item" data-gs-x="8" data-gs-y="0" data-gs-width="2" data-gs-height="2">
+                <div class="grid-stack-item-content">
+				<div id = "g4"></div>
+    <script>
+
+		
+		function distance() {
+		var g4 = new JustGage({
+          id: "g4",
+          value: (read_distance("sensor_sonic")),
+		  min: 0,
+		  max: 17000,
+          title: "Distance Sensor",
+		  titleFontColor: "white",
+		  valueFontColor: "white",
+		  customSectors: [{
+			color : "#99fa72",
+			lo : 0,
+			hi : 8490
+		  },{
+			color : "#66c740",
+			lo : 8500,
+			hi : 17000
+		  }]
+        });
+
+
+        setInterval(function() {
+		  g4.refresh(read_distance("sensor_sonic"));
+        }, 1000);
+		}
+		
+    </script>					
+				
+				</div>
+	</div> 
+	
+	<div class="grid-stack-item" data-gs-x="10" data-gs-y="0" data-gs-width="2" data-gs-height="2">
+                <div class="grid-stack-item-content">
+				<div id = "robot">
+				<?php
+	$sql = "SELECT robot_last_session, robot_mac_address, robot_name FROM robot WHERE classroom_id = '$classroom_id'";
+$result = mysql_query($sql, $conn)
+or die ('Problem with query' . mysql_error());
+
+while ($row = mysql_fetch_array($result)){ 
+
+$timestamp = $row["robot_last_session"];
+$dateFromDb = strtotime("$timestamp");
+$datesec = strtotime("-5 seconds");
+
+if($dateFromDb <= $datesec){
+
+echo "<div id = \"inactive\">";	
+$name1=$row["robot_name"];
+  echo "Inactive: $name1 <br>";
+ echo "</div>";
+}  
+  else {
+	  echo "<div id = \"active\">";
+$name2 = $row["robot_name"];
+  echo "Active: $name2";
+  echo "</div>";
+}
+}
+	?>
+	</div>
+				</div>
+				</div>
+<div class="grid-stack-item" data-gs-x="0" data-gs-y="2" data-gs-width="4" data-gs-height="2">
+                <div class="grid-stack-item-content">
+				<div id = "g5"></div>
+				<div id = "g6"></div>
+    <script>
+
+		
+		function humidity_temp() {
+		var g5 = new JustGage({
+          id: "g5",
+          value: (read_humidity_temp("sensor_humidity")),
+		  min: 0,
+		  max: 100,
+		  symbol: "%",
+          title: "Humidity Sensor",
+		  titleFontColor: "white",
+		  valueFontColor: "white",
+		  customSectors: [{
+			color : "#d79532",
+			lo : 0,
+			hi : 50
+		  },{
+			color : "#a46200",
+			lo : 51,
+			hi : 100
+		  }]
+        });
+		
+		var g6 = new JustGage({
+          id: "g6",
+          value: (read_humidity_temp("sensor_temp")),
+		  min: -100,
+		  max: 100,
+          title: "Temperature Sensor",
+		  titleFontColor: "white",
+		  valueFontColor: "white",
+		  customSectors: [{
+			color : "#9df6f6",
+			lo : 0,
+			hi : 50
+		  },{
+			color : "#49c0c0",
+			lo : 51,
+			hi : 100
+		  }]
+        });
+
+
+        setInterval(function() {
+		  g5.refresh(read_humidity_temp("sensor_humidity"));
+		  g6.refresh(read_humidity_temp("sensor_temp"));
+        }, 1000);
+		}
+		
+    </script>					
+				
+				</div>
+	</div> 
+				
+	
+	</div>
+	</div>
+
+
+
+    <script type="text/javascript">
+        $(function () {
+            var options = {
+            };
+            $('.grid-stack').gridstack(options);
+        });
+    </script>
+	
+	
+  
+
+</body>
+</html>
+
+
